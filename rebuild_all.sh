@@ -5,7 +5,7 @@ rebuild()
     mkdir build
     cd build
     cmake -DCMAKE_BUILD_TYPE=Debug .. # will be changed to Release
-    make -j$(nproc) # number of paralell make jobs = number of CPU cores
+    make -j$(nproc) # number of parallel make jobs = number of CPU cores
     cd ../..
 }
 

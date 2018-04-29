@@ -1,6 +1,7 @@
 #include "udp_server.h"
 #include "error_handler.h"
 #include <unistd.h>
+#include <iostream>
 
 #define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
@@ -8,25 +9,22 @@ common::UDPServer::UDPServer(uint16_t port)
     : socket(port), clientAddressIsCorrect(false)
 {}
 
-const sockaddr *common::UDPServer::getClientAddress()
+const common::Address common::UDPServer::getClientAddress()
 {
-    return &clientAddress;
-}
-
-socklen_t common::UDPServer::getClientAddressLength()
-{
-    return clientAddressLength;
+    return clientAddress;
 }
 
 int common::UDPServer::receive(char *buffer, size_t size)
 {
-    int retval = recvfrom(socket.fd, buffer, size, 0, &clientAddress, &clientAddressLength);
+    int retval = recvfrom(socket.fd, buffer, size, 0, clientAddress.getAddress(), clientAddress.getAddressLengthPointer());
     if(retval < 0)
     {
         ERROR("no data received");
         clientAddressIsCorrect = false;
         return retval;
     }
+    std::cout << "received from: ";
+    clientAddress.print(std::cout);
     clientAddressIsCorrect = true;
     return retval;
 }
@@ -38,7 +36,7 @@ int common::UDPServer::send(const char *data, size_t size)
         ERROR("unknown client");
         return false;
     }
-    int retval = sendto(socket.fd, data, size, 0, getClientAddress(), getClientAddressLength());
+    int retval = sendto(socket.fd, data, size, 0, clientAddress.getAddress(), clientAddress.getAddressLength());
     if(retval < 0) // handling of this error will be changed
         ERROR("failed to send data");
     return retval;

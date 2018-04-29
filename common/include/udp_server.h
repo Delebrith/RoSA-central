@@ -8,9 +8,7 @@ class UDPServer
 {
 public:
     UDPServer(uint16_t port);
-    const sockaddr* getClientAddress();
-    socklen_t getClientAddressLength();
-
+    const Address getClientAddress();
 
     // receive and send return number of received bytes or negative value on error.
     // Note that size should be max 508 bytes
@@ -19,8 +17,7 @@ public:
 
 private:
     UDPsocket socket;
-    sockaddr clientAddress;
-    socklen_t clientAddressLength;
+    Address clientAddress;
     bool clientAddressIsCorrect;
 };
 }

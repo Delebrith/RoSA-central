@@ -15,8 +15,10 @@ int main(int argc, char **argv)
         return -1;
     }
     std::cout << "Received: " << buffer << "\n";
-    server.send(buffer, retval); 
-    std::cout << "Sent answer\n";
+    if(server.send(buffer, retval) > 0)
+        std::cout << "Sent answer\n";
+    else
+        std::cout << "Failed to send answer\n";
     return 0;
 }
 

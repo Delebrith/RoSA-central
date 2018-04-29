@@ -15,6 +15,7 @@ int main(int argc, char **argv)
         std::cout << "error, no data sent\n";
         return -1;
     }
+    std::cout << "Sent message\n";
     std::memset(message, 0, sizeof message); // clear buffer to see what we will receive
     retval = client.receive(message, sizeof message);
     if(retval < 0)

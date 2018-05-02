@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.9)
 project(rosa_common)
+set(CMAKE_CXX_STANDARD 11)
 FILE(GLOB_RECURSE SRC_FILES "src/*")
 FILE(GLOB_RECURSE INCLUDE_FILES "include/*")
 include_directories("include")

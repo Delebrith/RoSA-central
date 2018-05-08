@@ -17,6 +17,11 @@ common::UDPClient::UDPClient(const char *host, const char *port)
     serverAddressInfo.forEach([](addrinfo *ai) { Address(ai).print(std::cout); });
 }
 
+common::UDPsocket &common::UDPClient::getSocket()
+{
+    return socket;
+}
+
 const common::AddressInfo &common::UDPClient::getServerAddrinfo() const
 {
    return serverAddressInfo;
@@ -26,7 +31,7 @@ int common::UDPClient::receive(char *buffer, size_t size)
 {
 //    sockaddr addr;
 //    socklen_t addrlen;
-    int retval = recvfrom(socket.fd, buffer, size, 0, 0, 0);
+    int retval = recvfrom(socket.getFd(), buffer, size, 0, 0, 0);
     //TODO - chceck if addr is the same as the address we sent datagram to
     if(retval < 0)
         ERROR("no data received");
@@ -35,7 +40,7 @@ int common::UDPClient::receive(char *buffer, size_t size)
 
 int common::UDPClient::send(const char *data, size_t size)
 {
-    int retval = sendto(socket.fd, data, size, 0, serverAddress.getAddress(), serverAddress.getAddressLength());
+    int retval = sendto(socket.getFd(), data, size, 0, serverAddress.getAddress(), serverAddress.getAddressLength());
     if(retval < 0) // handling of this error will be changed
         ERROR("failed to send data");
     return retval;

@@ -9,14 +9,19 @@ common::UDPServer::UDPServer(uint16_t port)
     : socket(port), clientAddressIsCorrect(false)
 {}
 
-const common::Address common::UDPServer::getClientAddress()
+common::UDPsocket &common::UDPServer::getSocket()
+{
+    return socket;
+}
+
+const common::Address &common::UDPServer::getClientAddress() const
 {
     return clientAddress;
 }
 
 int common::UDPServer::receive(char *buffer, size_t size)
 {
-    int retval = recvfrom(socket.fd, buffer, size, 0, clientAddress.getAddress(), clientAddress.getAddressLengthPointer());
+    int retval = recvfrom(socket.getFd(), buffer, size, 0, clientAddress.getAddress(), clientAddress.getAddressLengthPointer());
     if(retval < 0)
     {
         ERROR("no data received");
@@ -36,7 +41,7 @@ int common::UDPServer::send(const char *data, size_t size)
         ERROR("unknown client");
         return false;
     }
-    int retval = sendto(socket.fd, data, size, 0, clientAddress.getAddress(), clientAddress.getAddressLength());
+    int retval = sendto(socket.getFd(), data, size, 0, clientAddress.getAddress(), clientAddress.getAddressLength());
     if(retval < 0) // handling of this error will be changed
         ERROR("failed to send data");
     return retval;

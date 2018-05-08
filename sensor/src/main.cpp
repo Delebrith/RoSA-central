@@ -7,6 +7,7 @@ int main(int argc, char **argv)
     (void)argv;
     char buffer[512];
     common::UDPServer server(9000);
+    server.getSocket().setSendTimeout(2000);
     std::cout << "UDP server started\n";
     int retval = server.receive(buffer, 511);
     if(retval < 0)

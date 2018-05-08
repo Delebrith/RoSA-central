@@ -5,11 +5,17 @@
 
 namespace common
 {
-    struct UDPsocket
+    class UDPsocket
     {
+    public:
+        UDPsocket(uint16_t port);
+        int getFd() const;
+        void setSendTimeout(unsigned milliseconds);
+        void setReceiveTimeout(unsigned milliseconds);
+        ~UDPsocket();
+
+    private:
         int fd;
         Address ownAddress;
-        UDPsocket(uint16_t port);
-        ~UDPsocket();
     };
 }

@@ -8,6 +8,8 @@ int main(int argc, char **argv)
     (void)argv;
     char message[] = "hello";
     common::UDPClient client("localhost", "9000");
+    client.getSocket().setSendTimeout(5000);
+    client.getSocket().setReceiveTimeout(2000);
     std::cout << "UDP client started\n";
     int retval = client.send(message, sizeof message);
     if(retval < 0)

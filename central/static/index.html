@@ -21,14 +21,20 @@
 
             <div class="row">
 
-                <div class="col-md-10 mx-auto">
-                    <div class="card rounded-0 card-success" style="margin-top: 40px">
+                <div class="col-md-5 mx-auto">
+                    <div class="card rounded-0" style="margin-top: 40px">
+                        <div class="card-header">
+                            <h4 class="mb-0">Użytkownik</h4>
+                        </div>
                         <div class="card-body">
-                            <h3 class="mb-0">Zalogowano jako: {{context.user.username}}</h3>
+                            Zalogowano jako: {{context.user.username}}
                         </div>
                     </div>
                 </div>
 
+                <div class="col-md-6 mx-auto">
+                    <ng-include src="'addSensorPanel.html'"></ng-include>
+                </div>
 
             </div>
             <ng-include src="'sensors.html'"></ng-include>
@@ -42,6 +48,7 @@
         app = angular.module("app", ["ngCookies"]);
     </script>
     <script src="js/appController.js"></script>
+    <script src="js/sensorController.js"></script>
     <script src="js/loginController.js"></script>
     <script src="js/logoutController.js"></script>
 

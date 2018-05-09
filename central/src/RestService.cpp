@@ -27,7 +27,7 @@ void RestService::handle_options(http_request request)
 
     response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
     response.headers().add(U("Access-Control-Allow-Methods"), U("POST, GET, DELETE, OPTIONS"));
-    response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
+    response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type, access-control-allow-headers, access-control-allow-origin, access-control-allow-methods"));
     request.reply(response);
 }
 
@@ -50,9 +50,13 @@ void RestService::handle_post(http_request request)
 
     std::string path = request.request_uri().path();
 
-    if (path == RestService::base_uri + "/sensor")
+    if (path == RestService::base_uri + "/sensor/add")
     {
-        post_sensor(request);
+        add_sensor(request);
+    }
+    else if (path == RestService::base_uri + "/sensor/modify")
+    {
+        modify_sensor(request);
     }
     else if (path == RestService::base_uri + "/login")
     {
@@ -88,11 +92,7 @@ void RestService::respond(const http_request& request, const status_code& status
     body[U("response")] = response;
 
     http_response http_response(status);
-    http_response.headers().add(U("Allow"), U("POST, GET, DELETE, OPTIONS"));
-
     http_response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-    http_response.headers().add(U("Access-Control-Allow-Methods"), U("POST, GET, DELETE, OPTIONS"));
-    http_response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type"));
     http_response.set_body(body);
     request.reply(http_response);
 }
@@ -102,25 +102,72 @@ void RestService::get_sensor(http_request request) {
     respond(request, status_codes::OK, json::value::string(U("list of sensors")));
 }
 
-void RestService::post_sensor(http_request request) {
+
+
+void RestService::add_sensor(http_request request) {
 
     auto http_request_params = uri::split_query(request.request_uri().query());
 
-    auto found_value = http_request_params.find(U("address"));
+    auto found_address = http_request_params.find(U("address"));
 
-    if (found_value == end(http_request_params)) {
+    if (found_address == end(http_request_params)) {
         auto err = U("Request received with get var \"address\" omitted from query.");
         cout << err << endl;
         respond(request, status_codes::BadRequest, json::value::string(err));
         return;
     }
 
-    auto sensor_addr = found_value->second;
-    cout << U("Received request: ") << sensor_addr << endl;
+    auto found_threshold = http_request_params.find(U("threshold"));
+
+    if (found_threshold == end(http_request_params)) {
+        auto err = U("Request received with get var \"threshold\" omitted from query.");
+        cout << err << endl;
+        respond(request, status_codes::BadRequest, json::value::string(err));
+        return;
+    }
+
+    auto sensor_addr = found_address->second;
+    auto sensor_threshold = found_threshold->second;
+
+    cout << U("Received request for sensor: ") << sensor_addr << " with threshold: " << sensor_threshold << endl;
 
     //TODO insert new sensor
 
-    respond(request, status_codes::Created, json::value::string(U("Added new sensor, address: ") + sensor_addr));
+    respond(request, status_codes::Created, json::value::string(
+            U("Added new sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
+}
+
+void RestService::modify_sensor(http_request request) {
+
+    auto http_request_params = uri::split_query(request.request_uri().query());
+
+    auto found_address = http_request_params.find(U("address"));
+
+    if (found_address == end(http_request_params)) {
+        auto err = U("Request received with get var \"address\" omitted from query.");
+        cout << err << endl;
+        respond(request, status_codes::BadRequest, json::value::string(err));
+        return;
+    }
+
+    auto found_threshold = http_request_params.find(U("threshold"));
+
+    if (found_threshold == end(http_request_params)) {
+        auto err = U("Request received with get var \"threshold\" omitted from query.");
+        cout << err << endl;
+        respond(request, status_codes::BadRequest, json::value::string(err));
+        return;
+    }
+
+    auto sensor_addr = found_address->second;
+    auto sensor_threshold = found_threshold->second;
+
+    cout << U("Received request for sensor: ") << sensor_addr << " with threshold: " << sensor_threshold << endl;
+
+    //TODO change existing sensor
+
+    respond(request, status_codes::Created, json::value::string(
+            U("Added new sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
 }
 
 void RestService::delete_sensor(http_request request) {

@@ -1,17 +1,19 @@
 app.controller("sensorController", function($scope, $http, $cookies) {
 
+    $scope.sensorArray;
+
     function failedGetSensor(response)
     {
-        alert('Błąd!');
+        alert('Błąd! ' + response.status);
     }
 
     function succesfulGetSensor(response)
     {
-        alert('Sukces!');
+        alert('Sukces! ' + response.status);
     }
 
     $scope.getSensors = function () {
-        var response = $http.get("/RoSA/sensor");
+        var response = $http.get($scope.serverAddress + "/RoSA/sensor");
         response.then(
         function (response) {
             succesfulGetSensor(response);
@@ -21,66 +23,71 @@ app.controller("sensorController", function($scope, $http, $cookies) {
         });
     }
 
-    function failedPostSensor(response)
+    function failedModifySensor(response)
     {
-        alert('Błąd!!');
+        alert('Błąd!!' + response.status);
     }
 
-    function succesfulPostSensor(response)
+    function succesfulModifySensor(response)
     {
-        alert('Sukces!');
+        alert('Sukces!' + response.status);
     }
 
-    $scope.postSensor = function (address, value) {
-        var response = $http.post("/RoSA/sensor?address=" + address + "&value=" + value);
+    $scope.modifySensor = function () {
+        var response = $http.post(
+            $scope.serverAddress + "/RoSA/sensor/modify?address=" + $scope.address + "&threshold=" + $scope.threshold,
+            );
         response.then(
             function (response) {
-                succesfulPostSensor(response);
+                succesfulModifySensor(response);
             },
             function (response) {
-                failedPostSensor(response);
+                failedModifySensor(response);
             });
     }
 
-    function failedPutSensor(response)
+    function failedModifySensor(response)
     {
-        alert('Błąd!');
+        alert('Błąd!' + response.status);
     }
 
-    function succesfulPutSensor(response)
+    function succesfulModifySensor(response)
     {
-        alert('Sukces!');
+        alert('Sukces!' + response.status);
     }
 
-    $scope.putSensor = function (address, value) {
-        var response = $http.put("/RoSA/sensor?address=" + address + "&value=" + value);
+    $scope.addSensor = function () {
+        var response = $http.post($scope.serverAddress + "/RoSA/sensor/add?address=" + $scope.address + "&threshold=" + $scope.threshold);
         response.then(
             function (response) {
-                succesfulPutSensor(response);
+                succesfulModifySensor(response);
+                console.log(reponse);
             },
             function (response) {
-                failedPutSensor(response);
+                failedModifySensor(response);
+                console.log(reponse);
             });
     }
 
     function failedDeleteSensor(response)
     {
-        alert('Sukces!');
+        alert('Błąd!' + response.status);
     }
 
     function succesfulDeleteSensor(response)
     {
-        $window.location.reload();
+        alert('Sukces!' + response.status);
+        //change $scope.sensorArray
     }
 
     $scope.deleteSensor = function (address) {
-        var response = $http.delete("/RoSA/sensor?address=" + address);
+        var response = $http.delete($scope.serverAddress + "/RoSA/sensor?address=" + $scope.address);
         response.then(
             function (response) {
-                succesfulPostSensor(response);
+                succesfulDeleteSensor(response);
             },
             function (response) {
-                failedPostSensor(response);
+                failedDeleteSensor(response);
             });
     }
 

@@ -31,7 +31,8 @@ private:
     void handle_delete(http_request request);
     void respond(const http_request& request, const status_code& status, const json::value& response);
     void get_sensor(http_request request);
-    void post_sensor(http_request request);
+    void add_sensor(http_request request);
+    void modify_sensor(http_request request);
     void delete_sensor(http_request request);
     void post_login(http_request request);
     void post_logout(http_request request);

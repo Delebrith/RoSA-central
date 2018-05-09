@@ -1,7 +1,8 @@
-app.controller('logoutController', function($scope, $cookies) {
+app.controller('logoutController', function($scope, $http, $cookies) {
 	$scope.logout = function() {
 
-        var response = $http.post("/RoSA/logout");
+        alert($scope.serverAddress);
+        var response = $http.post($scope.serverAddress + "/RoSA/logout");
         response.then(
             function (response) {
                 $cookies.remove('sessionId');

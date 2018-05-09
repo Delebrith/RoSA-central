@@ -1,0 +1,43 @@
+<div id="loginPanel" ng-controller="loginController"> 
+
+<!--Email: <input type="email" ng-model="email"><br>-->
+<!--Hasło: <input type="password" ng-model="password"><br>-->
+<!--<input type="button" ng-click="submit()" value="Zaloguj się">-->
+
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+
+            <img src="resources/RoSA.png" style="width: 40%; margin-left:30%; padding-top:20px;"/>
+
+            <!-- form card login -->
+            <div class="card rounded-0 card-success" style="margin-top: 40px">
+                <div class="card-header">
+                    <h3 class="mb-0">Logowanie</h3>
+                </div>
+                <div class="card-body">
+                    <form class="form" role="form" autocomplete="off" id="formLogin" method="POST">
+                        <div class="form-group">
+                            <label>Użytkownik</label>
+                            <input type="text" class="form-control form-control-lg rounded-0" ng-model="username">
+                            <div class="invalid-feedback">Wprowadź email!</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Hasło</label>
+                            <input type="password" class="form-control form-control-lg rounded-0" ng-model="password">
+                            <div class="invalid-feedback">Wprowadź hasło!</div>
+                        </div>
+                        <button class="btn btn-primary btn-lg float-right" id="btnLogin" ng-click = "submit()">
+                            Zaloguj się
+                        </button>
+                    </form>
+                </div>
+                <!--/card-block-->
+            </div>
+            <!-- /form card login -->
+
+        </div>
+
+
+    </div>
+
+</div>

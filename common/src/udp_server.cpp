@@ -2,6 +2,9 @@
 #include "error_handler.h"
 #include <unistd.h>
 #include <iostream>
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 #define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
@@ -28,8 +31,10 @@ int common::UDPServer::receive(char *buffer, size_t size)
         clientAddressIsCorrect = false;
         return retval;
     }
+#ifdef DEBUG
     std::cout << "received from: ";
     clientAddress.print(std::cout);
+#endif
     clientAddressIsCorrect = true;
     return retval;
 }

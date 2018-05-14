@@ -44,6 +44,7 @@ public:
     socklen_t getAddressLength() const;
     socklen_t* getAddressLengthPointer();
     void print(std::ostream &os);
+    bool operator<(const Address &other); // enables to use Addresses as map keys
 
 private:
     sockaddr_in6 address;

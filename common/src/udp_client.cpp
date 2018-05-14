@@ -73,6 +73,12 @@ void common::UDPClient::receiveAndCallCallbacks()
         if(retval > 0)
         {
             auto it = callbackMap.find(addr);
+#ifdef DEBUG
+            if(it == callbackMap.end())
+                FATAL_ERROR("callback not found in callbackMap");
+            if(it->second == nullptr)
+                FATAL_ERROR("callback in callbackMap is nullptr");
+#endif
             it->second->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
             callbackMap.erase(it);
         }

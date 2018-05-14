@@ -9,6 +9,9 @@ class AddressInfo
 public:
     AddressInfo(const char *host, const char *port, int socktype);
     ~AddressInfo();
+    AddressInfo(const AddressInfo &other) = delete;
+    void operator=(const AddressInfo &other) = delete;
+    AddressInfo(AddressInfo &&other);
     const addrinfo* getResult() const;
 
     template<typename Functor>

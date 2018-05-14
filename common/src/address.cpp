@@ -20,6 +20,12 @@ common::AddressInfo::~AddressInfo()
         freeaddrinfo(ai);
 }
 
+common::AddressInfo::AddressInfo(common::AddressInfo &&other)
+    : ai(other.ai)
+{
+    other.ai = nullptr;
+}
+
 const addrinfo* common::AddressInfo::getResult() const
 {
     return ai;

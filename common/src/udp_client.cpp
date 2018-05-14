@@ -21,48 +21,68 @@ common::UDPsocket &common::UDPClient::getSocket()
     return socket;
 }
 
-const common::AddressInfo &common::UDPClient::getServerAddrinfo() const
-{
-   return serverAddressInfo;
-}
-
 int common::UDPClient::receive(char *buffer, size_t size)
 {
-    int retval;
+    int retval = recvfrom(socket.getFd(), buffer, size, 0, 0, 0);
 #ifdef DEBUG
-    Address client_address;
-    retval = recvfrom(socket.getFd(), buffer, size, 0, client_address.getAddress(), client_address.getAddressLengthPointer());
+    if(retval < 0)
+        ERROR("no data received");
+    else
+        std::cout << "receive without saving address - ok\n";
 #endif
-    retval = recvfrom(socket.getFd(), buffer, size, 0, 0, 0);
-    //TODO - chceck if addr is the same as the address we sent datagram to
+    return retval;
+}
+
+int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fill_in)
+{
+    int retval = recvfrom(socket.getFd(), buffer, size, 0, address_to_fill_in.getAddress(),
+                          address_to_fill_in.getAddressLengthPointer());
+#ifdef DEBUG
     if(retval < 0)
         ERROR("no data received");
     else
     {
-#ifdef DEBUG
         std::cout << "client received answer from:\n";
-        client_address.print(std::cout);
-#endif
+        address_to_fill_in.print(std::cout);
     }
+#endif
     return retval;
 }
 
-void common::UDPClient::addToMessageQueue(common::UDPClient::MessageCallback &callback, const common::Address &address, const char *output_msg, size_t output_msg_length)
-{
-
-}
-
-void common::UDPClient::receiveAndCallCallbacks()
-{
-
-}
-
-int common::UDPClient::send(const char *data, size_t size, Address &address)
+int common::UDPClient::send(const char *data, size_t size, const Address &address)
 {
     int retval = sendto(socket.getFd(), data, size, 0, address.getAddress(), address.getAddressLength());
     if(retval < 0) // handling of this error will be changed
         ERROR("failed to send data");
     return retval;
+}
+
+void common::UDPClient::addToMessageQueue(MessageCallback *callback, const common::Address &address,
+                                          const char *output_msg, size_t output_msg_length)
+{
+    if(send(output_msg, output_msg_length, address) > 0)
+        callbackMap[address] = callback;
+}
+
+void common::UDPClient::receiveAndCallCallbacks()
+{
+    Address addr;
+    while(!callbackMap.empty())
+    {
+        int retval = receive(inputBuffer.data(), inputBuffer.size(), addr);
+        if(retval > 0)
+        {
+            auto it = callbackMap.find(addr);
+            it->second->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
+            callbackMap.erase(it);
+        }
+        else
+        {
+            for(auto &it : callbackMap)
+                it.second->callbackOnError();
+            callbackMap.clear();
+        }
+    }
 }
 
 #undef ERROR

@@ -94,11 +94,11 @@ void common::Address::print(std::ostream &os)
     os << address_str << " :" << port_str << "\n";
 }
 
-bool common::Address::operator<(const common::Address &other)
+bool common::Address::operator<(const common::Address &other) const
 {
     if(addressLength != other.addressLength)
         return addressLength < other.addressLength;
-    return std::memcmp(&address, other.address, addressLength) < 0;
+    return std::memcmp(getAddress(), other.getAddress(), addressLength) < 0;
 }
 
 #undef FATAL_ERROR

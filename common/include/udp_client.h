@@ -11,15 +11,17 @@ namespace common
 class UDPClient
 {
 public:
-    class MessageCallback // interface used in function addToMessageQueue
+    class Callback // interface used in function addToMessageQueue
     {
     public:
         virtual void callbackOnReceive(Address &address, char *input_msg, size_t input_msg_length) = 0;
         virtual void callbackOnError() = 0;
-        virtual ~MessageCallback() {}
+        virtual ~Callback() {}
     };
 
     UDPClient(size_t input_buffer_size);
+    UDPClient(size_t input_buffer_size, Callback *default_callback); // default_callback - see receiveAndCallCallbacks()
+    void setDefaultCallback(Callback *default_callback);
     UDPsocket &getSocket(); // non const reference, because socket options can be set
 
     // receive and send return number of received bytes or negative value on error.
@@ -32,15 +34,17 @@ public:
     // addToMessageQueue sends output_msg of length output_msg_length to given address and saves pair (address, callback),
     // which will be used in receiveAndCallCallbacks(). It iteratively tries to collect responses to all messages in
     // the queue. If a response comes, corresponding callbackOnReceive() is called. If receive() fails, corresponding
-    // callbackOnError() functions are called. Note that receiveAndCallCallbacks uses private buffer inside this class.
-    void addToMessageQueue(MessageCallback *callback, const Address &address,
+    // callbackOnError() functions are called. If message comes from unknown address, defaultCallback is called (or message
+    // is ignored - if defaultCallback is nullptr). Note that receiveAndCallCallbacks uses private buffer inside this class.
+    void addToMessageQueue(Callback *callback, const Address &address,
                            const char *output_msg, size_t output_msg_length);
     void receiveAndCallCallbacks();
 
 protected:
     UDPsocket socket;
     std::vector<char> inputBuffer;
-    std::map<const Address, MessageCallback*> callbackMap;
+    std::map<const Address, Callback*> callbackMap;
+    Callback *defaultCallback;
 };
 }
 

@@ -13,8 +13,17 @@
 #define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
 common::UDPClient::UDPClient(size_t input_buffer_size)
-    : socket(0), inputBuffer(input_buffer_size, 0) // port 0 - bind socket to an ephemeral port
+    : socket(0), inputBuffer(input_buffer_size, 0), defaultCallback(nullptr) // port 0 - bind socket to an ephemeral port
 {}
+
+common::UDPClient::UDPClient(size_t input_buffer_size, Callback *default_callback)
+    : socket(0), inputBuffer(input_buffer_size, 0), defaultCallback(default_callback) // port 0 - bind socket to an ephemeral port
+{}
+
+void common::UDPClient::setDefaultCallback(common::UDPClient::Callback *default_callback)
+{
+    defaultCallback = default_callback;
+}
 
 common::UDPsocket &common::UDPClient::getSocket()
 {
@@ -57,7 +66,7 @@ int common::UDPClient::send(const char *data, size_t size, const Address &addres
     return retval;
 }
 
-void common::UDPClient::addToMessageQueue(MessageCallback *callback, const common::Address &address,
+void common::UDPClient::addToMessageQueue(Callback *callback, const common::Address &address,
                                           const char *output_msg, size_t output_msg_length)
 {
     if(send(output_msg, output_msg_length, address) > 0)
@@ -73,9 +82,13 @@ void common::UDPClient::receiveAndCallCallbacks()
         if(retval > 0)
         {
             auto it = callbackMap.find(addr);
-#ifdef DEBUG
             if(it == callbackMap.end())
-                FATAL_ERROR("callback not found in callbackMap");
+            {
+                if(defaultCallback != nullptr)
+                    defaultCallback->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
+                continue;
+            }
+#ifdef DEBUG
             if(it->second == nullptr)
                 FATAL_ERROR("callback in callbackMap is nullptr");
 #endif

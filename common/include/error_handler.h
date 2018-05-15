@@ -1,5 +1,13 @@
 #pragma once
 
+#ifdef DEBUG
+#define ASSERT(x) \
+    if(!(x))  \
+        ErrorHandler::getInstance().fatalError("assertion failed: " #x, __LINE__ ,__FILE__);
+#else
+#define ASSERT(x) (void) x;
+#endif
+
 namespace common
 {
     class ErrorHandler

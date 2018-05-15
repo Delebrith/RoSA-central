@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.9)
+set(CMAKE_CXX_STANDARD 11)
 project(rosa_sensor)
 FILE(GLOB_RECURSE SOURCES "src/*")
 FILE(GLOB_RECURSE HEADERS "include/*")

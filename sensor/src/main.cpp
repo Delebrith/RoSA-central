@@ -3,10 +3,13 @@
 
 int main(int argc, char **argv)
 {
-    (void)argc; // unused
-    (void)argv;
+    if(argc != 2)
+    {
+        std::cout << "Usage: " << argv[0] << " <port>\n";
+        return -1;
+    }
     char buffer[512];
-    common::UDPServer server(9000);
+    common::UDPServer server(std::atoi(argv[1]));
     server.getSocket().setSendTimeout(2000);
     std::cout << "UDP server started\n";
     int retval = server.receive(buffer, 511);

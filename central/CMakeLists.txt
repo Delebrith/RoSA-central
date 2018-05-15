@@ -4,7 +4,7 @@ project(rosa_central)
 set(CMAKE_CXX_STANDARD 11)
 find_package(Boost 1.55.0 REQUIRED COMPONENTS system)
 link_directories(${CMAKE_SOURCE_DIR} ${Boost_LIBRARY_DIRS})
-set(Casablanca_LIBRARIES "-lboost_system -lcrypto -lssl -lcpprest")
+set(Casablanca_LIBRARIES "-lboost_system -lcrypto -lssl -lcpprest -lpthread")
 
 set(CMAKE_CXX_STANDARD 11)
 FILE(GLOB_RECURSE SOURCES "src/*")

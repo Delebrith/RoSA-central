@@ -7,6 +7,7 @@ int main(int argc, char **argv)
     (void)argv;
     char buffer[512];
     common::UDPServer server(9000);
+    server.getSocket().setSendTimeout(2000);
     std::cout << "UDP server started\n";
     int retval = server.receive(buffer, 511);
     if(retval < 0)
@@ -15,8 +16,10 @@ int main(int argc, char **argv)
         return -1;
     }
     std::cout << "Received: " << buffer << "\n";
-    server.send(buffer, retval); 
-    std::cout << "Sent answer\n";
+    if(server.send(buffer, retval) > 0)
+        std::cout << "Sent answer\n";
+    else
+        std::cout << "Failed to send answer\n";
     return 0;
 }
 

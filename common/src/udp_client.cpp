@@ -5,62 +5,52 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#ifdef DEBUG
 #include <iostream>
+#endif
 
 #define FATAL_ERROR(msg) ErrorHandler::getInstance().fatalError(msg, __LINE__ ,__FILE__)
 #define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
 common::UDPClient::UDPClient(const char *host, const char *port)
-    : socket(0), serverAddrinfo(nullptr) // port 0 - bind socket to an ephemeral port
+    : socket(0), serverAddressInfo(host, port, SOCK_DGRAM), serverAddress(serverAddressInfo) // port 0 - bind socket to an ephemeral port
 {
-    addrinfo hints;
-    std::memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    if(getaddrinfo(host, port, &hints, &serverAddrinfo) != 0)
-        FATAL_ERROR("getaddrinfo");
-    if(serverAddrinfo->ai_next) //TODO - more than 1 result in the list - why does it happen?
-    {
-        char buffer[128];
-        addrinfo *tmp = serverAddrinfo;
-        std::cout << "warning - many addrinfo results:\n";
-
-        for(int i=1; tmp != nullptr; tmp = tmp->ai_next, ++i)
-        {
-            sockaddr *sa = tmp->ai_addr;
-            uint16_t port = (sa->sa_family == AF_INET) ?
-                        ((struct sockaddr_in*)sa)->sin_port : (((struct sockaddr_in6*)sa)->sin6_port);
-            inet_ntop(tmp->ai_family, tmp->ai_addr, buffer, sizeof buffer);
-            std::cout << buffer << ":" << ntohs(port) << ", protocol: " << tmp->ai_protocol << "\n";
-        }
-    }
+#ifdef DEBUG
+    std::cout << "getaddrinfo result:\n";
+    serverAddressInfo.forEach([](addrinfo *ai) { Address(ai).print(std::cout); });
+#endif
 }
 
-common::UDPClient::~UDPClient()
+common::UDPsocket &common::UDPClient::getSocket()
 {
-    if(serverAddrinfo)
-        freeaddrinfo(serverAddrinfo);
+    return socket;
 }
 
-const addrinfo *common::UDPClient::getServerAddrinfo()
+const common::AddressInfo &common::UDPClient::getServerAddrinfo() const
 {
-   return serverAddrinfo;
+   return serverAddressInfo;
 }
 
 int common::UDPClient::receive(char *buffer, size_t size)
 {
-    sockaddr addr;
-    socklen_t addrlen;
-    int retval = recvfrom(socket.fd, buffer, size, 0, &addr, &addrlen);
+    Address client_address;
+    int retval = recvfrom(socket.getFd(), buffer, size, 0, client_address.getAddress(), client_address.getAddressLengthPointer());
     //TODO - chceck if addr is the same as the address we sent datagram to
     if(retval < 0)
         ERROR("no data received");
+    else
+    {
+#ifdef DEBUG
+        std::cout << "client received answer from:\n";
+        client_address.print(std::cout);
+#endif
+    }
     return retval;
 }
 
 int common::UDPClient::send(const char *data, size_t size)
 {
-    int retval = sendto(socket.fd, data, size, 0, serverAddrinfo->ai_addr, serverAddrinfo->ai_addrlen);
+    int retval = sendto(socket.getFd(), data, size, 0, serverAddress.getAddress(), serverAddress.getAddressLength());
     if(retval < 0) // handling of this error will be changed
         ERROR("failed to send data");
     return retval;

@@ -1,14 +1,21 @@
 #pragma once
+#include "address.h"
 #include <cstdint>
 #include <netinet/in.h>
 
 namespace common
 {
-    struct UDPsocket
+    class UDPsocket
     {
-        int fd;
-        sockaddr_in ownAddress; // will be changed to generic to support IPv6
+    public:
         UDPsocket(uint16_t port);
+        int getFd() const;
+        void setSendTimeout(unsigned milliseconds);
+        void setReceiveTimeout(unsigned milliseconds);
         ~UDPsocket();
+
+    private:
+        int fd;
+        Address ownAddress;
     };
 }

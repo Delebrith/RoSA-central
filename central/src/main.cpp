@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include "RestService.h"
+#include "SensorList.h"
 
 using namespace web;
 using namespace http;

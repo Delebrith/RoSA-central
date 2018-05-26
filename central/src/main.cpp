@@ -10,6 +10,8 @@ using namespace utility;
 using namespace http::experimental::listener;
 
 std::unique_ptr<RestService, std::default_delete<RestService>> rest;
+SensorList sensorlist;
+
 void on_initialize(const string_t& address)
 {
     // Build our listener's URI from the configured address and the hard-coded path "MyServer/Action"
@@ -18,7 +20,7 @@ void on_initialize(const string_t& address)
     sensorUri.append_path(U(RestService::base_uri));
 
     auto addr = sensorUri.to_uri().to_string();
-    rest = std::unique_ptr<RestService>(new RestService(addr));
+    rest = std::unique_ptr<RestService>(new RestService(addr, &sensorlist));
     rest->open().wait();
 
     ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
@@ -32,6 +34,12 @@ void activate_rest_service()
     utility::string_t address = U("http://localhost:");
     address.append(port);
     on_initialize(address);
+}
+
+void close_rest_service()
+{
+    rest->close().wait();
+    return;
 }
 
 class Callback : public common::UDPClient::Callback
@@ -83,6 +91,12 @@ void test_udp_client(int argc, char **argv)
 int main(int argc, char **argv)
 {
     activate_rest_service();
-    test_udp_client(argc, argv);
-    return 0;
+    //test_udp_client(argc, argv);
+    std::cout << "press enter to exit...";
+    while (std::cin.get() != '\n')
+    {
+        continue;
+    }
+    close_rest_service();
+    exit(0);
 }

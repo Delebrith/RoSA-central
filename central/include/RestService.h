@@ -2,13 +2,15 @@
 // Created by pszwed on 26.04.18.
 //
 
-#ifndef REST_RESTSERVER_H
-#define REST_RESTSERVER_H
+#ifndef REST_RESTSERVICE_H
+#define REST_RESTSERVICE_H
 
 #include <cpprest/json.h>
 #include <cpprest/http_listener.h>
 #include <cpprest/uri.h>
 #include <cpprest/asyncrt_utils.h>
+#include "SensorList.h"
+
 
 using namespace web;
 using namespace http;
@@ -20,7 +22,7 @@ class RestService {
 public:
     static const std::string base_uri;
     RestService();
-    RestService(utility::string_t url);
+    RestService(utility::string_t url, SensorList* sensorList);
     pplx::task<void> open() {return m_listener.open(); };
     pplx::task<void> close() {return m_listener.close(); }
 
@@ -37,8 +39,9 @@ private:
     void post_login(http_request request);
     void post_logout(http_request request);
     http_listener m_listener;
+    SensorList* sensorList;
 
 };
 
 
-#endif //REST_RESTSERVER_H
+#endif //REST_RESTSERVICE_H

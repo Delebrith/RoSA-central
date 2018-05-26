@@ -12,8 +12,9 @@ using namespace http::experimental::listener;
 
 const std::string RestService::base_uri = "/RoSA";
 
-RestService::RestService(utility::string_t url) : m_listener(url)
+RestService::RestService(utility::string_t url, SensorList* sensorList) : m_listener(url)
 {
+    sensorList = sensorList;
     m_listener.support(methods::GET, std::bind(&RestService::handle_get, this, std::placeholders::_1));
     m_listener.support(methods::POST, std::bind(&RestService::handle_post, this, std::placeholders::_1));
     m_listener.support(methods::DEL, std::bind(&RestService::handle_delete, this, std::placeholders::_1));
@@ -131,10 +132,16 @@ void RestService::add_sensor(http_request request) {
 
     cout << U("Received request for sensor: ") << sensor_addr << " with threshold: " << sensor_threshold << endl;
 
-    //TODO insert new sensor
+    //insert new sensor
+    try {
+        sensorList->add_sensor(sensor_addr, stof(sensor_threshold));
+        respond(request, status_codes::Created, json::value::string(
+                U("Added new sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
+    } catch (std::exception e) {
+        respond(request, status_codes::BadRequest, json::value::string(
+                U("Failed to create sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold ));
 
-    respond(request, status_codes::Created, json::value::string(
-            U("Added new sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
+    }
 }
 
 void RestService::modify_sensor(http_request request) {

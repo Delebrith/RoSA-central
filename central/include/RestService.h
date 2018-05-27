@@ -23,7 +23,7 @@ public:
     static const std::string base_uri;
     RestService();
     RestService(utility::string_t url, SensorList* sensorList);
-    pplx::task<void> open() {return m_listener.open(); };
+    pplx::task<void> open() {return m_listener.open(); }
     pplx::task<void> close() {return m_listener.close(); }
 
 private:

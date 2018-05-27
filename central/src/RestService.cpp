@@ -3,6 +3,7 @@
 //
 
 #include "RestService.h"
+#include "Sensor.h"
 
 using namespace std;
 using namespace web;
@@ -14,7 +15,7 @@ const std::string RestService::base_uri = "/RoSA";
 
 RestService::RestService(utility::string_t url, SensorList* sensorList) : m_listener(url)
 {
-    sensorList = sensorList;
+    this->sensorList = sensorList;
     m_listener.support(methods::GET, std::bind(&RestService::handle_get, this, std::placeholders::_1));
     m_listener.support(methods::POST, std::bind(&RestService::handle_post, this, std::placeholders::_1));
     m_listener.support(methods::DEL, std::bind(&RestService::handle_delete, this, std::placeholders::_1));
@@ -99,8 +100,13 @@ void RestService::respond(const http_request& request, const status_code& status
 }
 
 void RestService::get_sensor(http_request request) {
-    //TODO prepare vector of sensors
-    respond(request, status_codes::OK, json::value::string(U("list of sensors")));
+    std::vector<json::value> sensor_vector;
+    std::vector<std::pair<std::string, SensorList::SensorState>> sensors = sensorList->get_sensors();
+    for (unsigned i = 0; i < sensors.size(); i++)
+    {
+        sensor_vector.push_back(Sensor(sensors[i].first, sensors[i].second).toJSON());
+    }
+    respond(request, status_codes::OK, json::value::array(sensor_vector));
 }
 
 
@@ -171,10 +177,16 @@ void RestService::modify_sensor(http_request request) {
 
     cout << U("Received request for sensor: ") << sensor_addr << " with threshold: " << sensor_threshold << endl;
 
-    //TODO change existing sensor
+    //modify sensor
+    try {
+        sensorList->set_threshold(sensor_addr, stof(sensor_threshold));
+        respond(request, status_codes::Created, json::value::string(
+                U("Modified sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
+    } catch (std::exception e) {
+        respond(request, status_codes::BadRequest, json::value::string(
+                U("Failed to modify sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold ));
 
-    respond(request, status_codes::Created, json::value::string(
-            U("Added new sensor, address: ") + sensor_addr + U(" with threshold: ") + sensor_threshold));
+    }
 }
 
 void RestService::delete_sensor(http_request request) {
@@ -192,7 +204,16 @@ void RestService::delete_sensor(http_request request) {
 
     auto sensor_id = found_value->second;
     cout << U("Received request: ") << sensor_id << endl;
-    respond(request, status_codes::ResetContent, json::value::string(U("Deleted sensor, address: ") + sensor_id));
+    //insert new sensor
+    try {
+        sensorList->erase_sensor(sensor_id);
+        respond(request, status_codes::Created, json::value::string(
+                U("deleted sensor, address: ") + sensor_id));
+    } catch (std::exception e) {
+        respond(request, status_codes::BadRequest, json::value::string(
+                U("Failed to delete sensor, address: ") + sensor_id ));
+
+    }
 }
 
 void RestService::post_login(http_request request) {

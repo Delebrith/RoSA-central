@@ -16,7 +16,7 @@ app.controller('loginController', function($scope, $http, $cookies, $window) {
             username: $scope.username,
             password: $scope.password
         };
-        $scope.getSensors();
+        $scope.checkSensors;
 	}
 
 	$scope.submit = function()	{

@@ -1,6 +1,17 @@
-app.controller("sensorController", function($scope, $http, $cookies) {
+app.controller("sensorController", function($scope, $http, $cookies, $interval) {
 
     $scope.sensorArray;
+
+    $scope.checkSensors = $interval(function () {
+        var response = $http.get($scope.serverAddress + "/RoSA/sensor");
+        response.then(
+            function (response) {
+                succesfulGetSensor(response);
+            },
+            function (response) {
+                failedGetSensor(response);
+            });
+    }, 12000);
 
     function failedGetSensor(response)
     {
@@ -10,6 +21,7 @@ app.controller("sensorController", function($scope, $http, $cookies) {
     function succesfulGetSensor(response)
     {
         $scope.sensorArray = response.data.response;
+        console.log($scope.sensorArray);
     }
 
     $scope.getSensors = function () {
@@ -33,9 +45,10 @@ app.controller("sensorController", function($scope, $http, $cookies) {
         alert('Sukces!' + response.status);
     }
 
-    $scope.modifySensor = function () {
+    $scope.modifySensor = function (address) {
+        var threshold = document.getElementById("thresholdOf" + address).value;
         var response = $http.post(
-            $scope.serverAddress + "/RoSA/sensor/modify?address=" + $scope.address + "&threshold=" + $scope.threshold,
+            $scope.serverAddress + "/RoSA/sensor/modify?address=" + address + "&threshold=" + threshold,
             );
         response.then(
             function (response) {
@@ -61,6 +74,7 @@ app.controller("sensorController", function($scope, $http, $cookies) {
         response.then(
             function (response) {
                 succesfulModifySensor(response);
+                $scope.getSensors();
                 console.log(reponse);
             },
             function (response) {
@@ -81,7 +95,7 @@ app.controller("sensorController", function($scope, $http, $cookies) {
     }
 
     $scope.deleteSensor = function (address) {
-        var response = $http.delete($scope.serverAddress + "/RoSA/sensor?address=" + $scope.address);
+        var response = $http.delete($scope.serverAddress + "/RoSA/sensor?address=" + address);
         response.then(
             function (response) {
                 succesfulDeleteSensor(response);

@@ -10,7 +10,21 @@ Sensor::Sensor(std::string address, SensorList::SensorState state)
     this->current_value = state.current_value;
     this->typical_value = state.typical_value;
     this->threshold = state.threshold;
-    this->status = state.status;
+
+    switch (state.status)
+    {
+        case SensorList::SensorStatus::NEW:
+            this->status = "NEW";
+            break;
+        case SensorList::SensorStatus::CORRECT:
+            this->status = "CORRECT";
+            break;
+        case SensorList::SensorStatus::NOCOMMUNICATION:
+            this->status = "NOCOMMUNICATION";
+            break;
+        default:
+            this->status = "[UNKNOWN]";
+    }
 }
 
 json::value Sensor::toJSON()

@@ -30,7 +30,8 @@ void RestService::handle_options(http_request request)
 
     response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
     response.headers().add(U("Access-Control-Allow-Methods"), U("POST, GET, DELETE, OPTIONS"));
-    response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type, access-control-allow-headers, access-control-allow-origin, access-control-allow-methods"));
+    response.headers().add(U("Access-Control-Allow-Headers"), U("Content-Type, access-control-allow-headers, Accept, "
+                                                                "access-control-allow-origin, access-control-allow-methods"));
     request.reply(response);
 }
 

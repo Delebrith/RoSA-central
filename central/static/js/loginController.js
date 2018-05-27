@@ -1,7 +1,7 @@
 app.controller('loginController', function($scope, $http, $cookies, $window) {
-	function invalidEmail()
+	function invalidUsername()
 	{
-		alert('Niepoprawny adres email!');
+		alert('Niepoprawna nazwa!');
 	}
 
 	function failedLogin(response)
@@ -11,8 +11,12 @@ app.controller('loginController', function($scope, $http, $cookies, $window) {
 
 	function succesfulLogin(response)
 	{
-		$cookies.put('session_id', response.headers("session_id"));
-		$window.location.reload();
+		$cookies.put('session_id', "some-session-id");
+        $scope.context.user = {
+            username: $scope.username,
+            password: $scope.password
+        };
+        $scope.getSensors();
 	}
 
 	$scope.submit = function()	{
@@ -26,19 +30,14 @@ app.controller('loginController', function($scope, $http, $cookies, $window) {
 			return;
 		}
 		
-	    // var response = $http.post("/RoSA/login", userCredentialsDto);
-	    // response.then(
-	    // 	function(response) {
-			// 	succesfulLogin(response);
-	    // 	},
-	    // 	function(response){
-			// 	failedLogin(response);
-    	// 	});
+	    var response = $http.post($scope.serverAddress + "/RoSA/login", userCredentialsDto);
+	    response.then(
+	    	function(response) {
+				succesfulLogin(response);
+	    	},
+	    	function(response){
+				failedLogin(response);
+    		});
 
-		$scope.context.loggedIn = true;
-		$scope.context.user = {
-            username: $scope.username,
-            password: $scope.password
-        };
 	}
 });

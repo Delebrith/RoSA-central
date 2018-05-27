@@ -20,13 +20,11 @@ app.config(["$httpProvider", function ($httpProvider) {
 
 app.controller("appController", function($scope, $http, $cookies, $location) {
 	$scope.context = {
-			user: undefined,
-			loggedIn: false
+			user: undefined
 	}
 
 	$scope.isLogged = function () {
-		return $scope.context.loggedIn;
-		// return $cookies.get("session_id") != null
+		return $cookies.get("session_id") != null
 	}
 
 	$scope.serverAddress = "http://" + self.location.hostname + ":8081";

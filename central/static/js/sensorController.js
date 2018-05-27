@@ -9,7 +9,7 @@ app.controller("sensorController", function($scope, $http, $cookies) {
 
     function succesfulGetSensor(response)
     {
-        alert('Sukces! ' + response.status);
+        $scope.sensorArray = response.data.response;
     }
 
     $scope.getSensors = function () {

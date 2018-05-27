@@ -4,6 +4,7 @@
 
 #include "RestService.h"
 #include "Sensor.h"
+#include "User.h"
 
 using namespace std;
 using namespace web;
@@ -217,13 +218,21 @@ void RestService::delete_sensor(http_request request) {
 }
 
 void RestService::post_login(http_request request) {
-    //TODO login operation
-    respond(request, status_codes::OK, json::value::string(U("logged in")));
+    try {
+        json::value body = request.extract_json().get();
+        User user(body);
 
+        //TODO check credentials
+        //TODO create session
+
+        respond(request, status_codes::OK, json::value::string(U(user.username + " successfully logged in")));
+    } catch (std::exception e) {
+        respond(request, status_codes::OK, json::value::string(U("Failed to log in")));
+    }
 }
 
 void RestService::post_logout(http_request request) {
-    //TODO logout operation
+    //TODO lerase session
     respond(request, status_codes::OK, json::value::string(U("logged out")));
 
 }

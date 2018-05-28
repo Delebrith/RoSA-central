@@ -38,10 +38,10 @@ void ScriptExecutor::execute() {
             boost::split(command, msg, [](char c) { return c == ' '; });
             if (command[0] == "add_sensor" && command.size() == 3) {
                 return_msg = add_sensor(command);
-            } else if (command[0] == "delete_sensor") {
-
-            } else if (command[0] == "change_thread") {
-
+            } else if (command[0] == "erase_sensor" && command.size() == 2) {
+                return_msg = erase_sensor(command);
+            } else if (command[0] == "set_threshold" && command.size() == 3) {
+                return_msg = add_sensor(command);
             }
 
             strncpy(buf, return_msg.c_str(), sizeof(buf));
@@ -62,18 +62,45 @@ void ScriptExecutor::execute() {
 ScriptExecutor::ScriptExecutor(SensorList *sensorList) : sensorList(sensorList) {}
 
 std::string ScriptExecutor::add_sensor(std::vector<std::string> &command) {
-    float number;
+    float threshold;
     try {
-        number = std::stof(command[2]);
+        threshold = std::stof(command[2]);
     }
     catch (std::logic_error &) {
         return "Can't add sensor: valid format of threshold";
     }
     try {
-        sensorList->add_sensor(command[1], number);
+        sensorList->add_sensor(command[1], threshold);
     }
     catch (std::logic_error &error) {
         return error.what();
     }
     return "Sensor " + command[1] + " added";
+}
+
+std::string ScriptExecutor::erase_sensor(std::vector<std::string> &command) {
+    try {
+        sensorList->erase_sensor(command[1]);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+    return "Sensor " + command[1] + " erased";
+}
+
+std::string ScriptExecutor::set_threshold(std::vector<std::string> &command) {
+    float threshold;
+    try {
+        threshold = std::stof(command[2]);
+    }
+    catch (std::logic_error &) {
+        return "Can't add sensor: valid format of threshold";
+    }
+    try {
+        sensorList->set_threshold(command[1], threshold);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+    return "Sensor " + command[1] + " erased";
 }

@@ -19,6 +19,10 @@ public:
 private:
     std::string add_sensor(std::vector<std::string> &command);
 
+    std::string erase_sensor(std::vector<std::string> &command);
+
+    std::string set_threshold(std::vector<std::string> &command);
+
 };
 
 

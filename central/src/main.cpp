@@ -28,10 +28,10 @@ void on_initialize(const string_t& address)
     return;
 }
 
-void activate_rest_service()
+void activate_rest_service(const utility::string_t host)
 {
-    utility::string_t port = U("8081");
-    utility::string_t address = U("http://localhost:");
+    utility::string_t port = U(":8081");
+    utility::string_t address = U(U("http://") + host);
     address.append(port);
     on_initialize(address);
 }
@@ -90,7 +90,7 @@ void test_udp_client(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    activate_rest_service();
+    activate_rest_service(U(argv[1]));
     //test_udp_client(argc, argv);
     std::cout << "press enter to exit...";
     while (std::cin.get() != '\n')

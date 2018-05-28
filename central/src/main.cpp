@@ -4,9 +4,11 @@
 #include <thread>
 #include "RestService.h"
 #include "SensorList.h"
+#include "UserList.h"
 #include "ScriptExecutor.h"
 
 SensorList sensorList;
+UserList userList;
 
 /*
 using namespace web;
@@ -85,7 +87,7 @@ void test_udp_client(int argc, char **argv)
     client.receiveAndCallCallbacks();
 }*/
 void execute() {
-    ScriptExecutor executor(&sensorList);
+    ScriptExecutor executor(&sensorList, &userList);
     executor.execute();
 }
 

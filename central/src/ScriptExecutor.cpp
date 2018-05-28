@@ -34,22 +34,13 @@ void ScriptExecutor::execute() {
         } else if (strcmp("", buf) != 0) {
             printf("Received: %s\n", buf);
             std::string msg(buf);
-            std::vector<std::string> command;
-            boost::split(command, msg, [](char c) { return c == ' '; });
-            if (command[0] == "add_sensor" && command.size() == 3) {
-                return_msg = add_sensor(command);
-            } else if (command[0] == "erase_sensor" && command.size() == 2) {
-                return_msg = erase_sensor(command);
-            } else if (command[0] == "set_threshold" && command.size() == 3) {
-                return_msg = add_sensor(command);
-            }
-
+            return_msg = execute_command(msg);
             strncpy(buf, return_msg.c_str(), sizeof(buf));
             buf[sizeof(buf) - 1] = 0;
+
             printf("Sending back...\n");
             write(central_out, buf, BUFSIZ);
         }
-
         memset(buf, 0, sizeof(buf));
     }
     close(central_in);
@@ -59,7 +50,8 @@ void ScriptExecutor::execute() {
     unlink(FIFO_OUT);
 }
 
-ScriptExecutor::ScriptExecutor(SensorList *sensorList) : sensorList(sensorList) {}
+ScriptExecutor::ScriptExecutor(SensorList *sensorList, UserList *userList) : sensorList(sensorList),
+                                                                             userList(userList) {}
 
 std::string ScriptExecutor::add_sensor(std::vector<std::string> &command) {
     float threshold;
@@ -98,9 +90,59 @@ std::string ScriptExecutor::set_threshold(std::vector<std::string> &command) {
     }
     try {
         sensorList->set_threshold(command[1], threshold);
+        return "new threshold for sensor " + command[1] + " set";
     }
     catch (std::logic_error &error) {
         return error.what();
     }
-    return "Sensor " + command[1] + " erased";
+}
+
+std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
+    try {
+        SensorList::SensorState state = sensorList->get_sensor_state(command[1]);
+        return "Sensor: " + command[1] + " current_value: " + std::to_string(state.current_value) +
+               " typical_value: " + std::to_string(state.typical_value) +
+               " threshold: " + std::to_string(state.threshold);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+}
+
+std::string ScriptExecutor::add_user(std::vector<std::string> &command) {
+    try {
+        userList->add_user(command[1]);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+    return "User " + command[1] + " added";
+}
+
+std::string ScriptExecutor::erase_user(std::vector<std::string> &command) {
+    try {
+        userList->erase_user(command[1]);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+    return "User " + command[1] + " erased";
+}
+
+std::string ScriptExecutor::execute_command(std::string &msg) {
+    std::vector<std::string> command;
+    boost::split(command, msg, [](char c) { return c == ' '; });
+    if (command[0] == "add_sensor" && command.size() == 3)
+        return add_sensor(command);
+    if (command[0] == "remove_sensor" && command.size() == 2)
+        return erase_sensor(command);
+    if (command[0] == "set_threshold" && command.size() == 3)
+        return set_threshold(command);
+    if (command[0] == "get_sensor" && command.size() == 2)
+        return get_sensor(command);
+    if (command[0] == "add_user" && command.size() == 2)
+        return add_user(command);
+    if (command[0] == "remove_user" && command.size() == 2)
+        return erase_user(command);
+    return "invalid command";
 }

@@ -10,6 +10,7 @@
 #include <cpprest/uri.h>
 #include <cpprest/asyncrt_utils.h>
 #include "SensorList.h"
+#include "SessionList.h"
 
 
 using namespace web;
@@ -40,6 +41,7 @@ private:
     void post_logout(http_request request);
     http_listener m_listener;
     SensorList* sensorList;
+    SessionList sessionList;
 
 };
 

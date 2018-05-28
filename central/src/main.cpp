@@ -1,9 +1,14 @@
 #include <udp_client.h>
 #include <iostream>
 #include <cstring>
+#include <thread>
 #include "RestService.h"
 #include "SensorList.h"
+#include "ScriptExecutor.h"
 
+SensorList sensorList;
+
+/*
 using namespace web;
 using namespace http;
 using namespace utility;
@@ -78,11 +83,17 @@ void test_udp_client(int argc, char **argv)
     client.addToMessageQueue(&callback2, server_address2, "hello2", sizeof("hello2"));
     std::cout << "Sent messages\n";
     client.receiveAndCallCallbacks();
+}*/
+void execute() {
+    ScriptExecutor executor(&sensorList);
+    executor.execute();
 }
 
 int main(int argc, char **argv)
 {
-    activate_rest_service();
-    test_udp_client(argc, argv);
+    //activate_rest_service();
+    //test_udp_client(argc, argv);
+    std::thread t1(execute);
+    t1.join();
     return 0;
 }

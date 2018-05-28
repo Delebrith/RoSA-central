@@ -1,3 +1,4 @@
+#include <iostream>
 #include "SensorList.h"
 
 SensorList::SensorState::SensorState(float current_value, float typical_value, float threshold,
@@ -12,6 +13,7 @@ SensorList::SensorState::SensorState() {}
 void SensorList::add_sensor(std::string address, float threshold) {
     std::lock_guard<std::mutex> lock(mutex);
     sensors.emplace(address, threshold);
+    std::cout << "added " << address << " " << threshold << std::endl;
 }
 
 void SensorList::erase_sensor(std::string address) {
@@ -21,7 +23,7 @@ void SensorList::erase_sensor(std::string address) {
         i = sensors.erase(address);
     }
     if(i == 0)
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
 }
 
 void SensorList::set_threshold(std::string address, float new_threshold) {
@@ -30,7 +32,7 @@ void SensorList::set_threshold(std::string address, float new_threshold) {
         sensors.at(address).threshold = new_threshold;
     }
     catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
     }
 }
 
@@ -41,7 +43,7 @@ void SensorList::set_values(std::string address, float new_current_value, float 
         sensors.at(address).typical_value = new_typical_value;
     }
     catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
     }
 }
 
@@ -51,7 +53,7 @@ void SensorList::set_status(std::string address, SensorList::SensorStatus new_st
         sensors.at(address).status = new_status;
     }
     catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
     }
 }
 
@@ -62,7 +64,7 @@ SensorList::SensorState SensorList::get_sensor_state(std::string address) {
         state = sensors.find(address)->second;
     }
     catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
     }
     return state;
 }

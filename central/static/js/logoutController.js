@@ -5,8 +5,7 @@ app.controller('logoutController', function($scope, $http, $cookies) {
         var response = $http.post($scope.serverAddress + "/RoSA/logout");
         response.then(
             function (response) {
-                $cookies.remove('sessionId');
-                $scope.context.loggedIn = false;
+                $cookies.remove('session_id');
                 alert("Wylogowano!");
             },
             function (response) {

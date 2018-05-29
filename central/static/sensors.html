@@ -1,4 +1,4 @@
-<div id="sensors" ng-controller="sensorController" class="col-md-10 mx-auto">
+<div id="sensors" ng-controller="sensorController" class="col-md-11 mx-auto">
 
     <br><br>
     <h2>Stan czujników</h2>
@@ -8,55 +8,41 @@
     <div id="sensorlist" class="card">
         <table class="table" style="text-align: center">
             <thead>
-            <th class="col-md-4">Adres</th>
+            <th class="col-md-3">Adres</th>
             <th>Próg</th>
             <th>Wartość aktualna</th>
             <th>Wartość średnia</th>
+            <th>Status</th>
             <th>Akcje</th>
             </thead>
-            <tr>
+            <tr ng-repeat="i in sensorArray">
                 <td>
-                    255.255.255.255
+                    {{i.address}}
                 </td>
                 <td>
-                    100.0
+                    {{i.threshold}}
                 </td>
                 <td>
-                    80.0
+                    {{i.currentValue}}
                 </td>
                 <td>
-                    85.0
+                    {{i.typicalValue}}
                 </td>
                 <td>
+                    {{i.status}}
+                </td>
+                <td class="col-md-6" >
                     <div class="col-md-12 row justify-content-around row justify-content-around">
-                        <button type="button" class="btn btn-outline-primary my-2 my-sm-0">
+
+                        <label>Nowy próg: </label>
+
+                        <input type="number" id="thresholdOf{{i.address}}" class="col-md-6 form-control form-control-md rounded-0" value="0">
+
+                        <button type="button" class="btn btn-outline-primary my-2 my-sm-0" ng-click="modifySensor(i.address)">
                             Modyfikuj
                         </button>
-                        <button type="button" class="btn btn-outline-danger my-2 my-sm-0">
-                            Usuń
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    255.255.255.255
-                </td>
-                <td>
-                    100.0
-                </td>
-                <td>
-                    180.0
-                </td>
-                <td>
-                    85.0
-                </td>
-                <td>
-                    <div class="col-md-12 row justify-content-around row justify-content-around">
-                        <button type="button" class="btn btn-outline-primary my-2 my-sm-0">
-                            Modyfikuj
-                        </button>
-                        <button type="button" class="btn btn-outline-danger my-2 my-sm-0">
+
+                        <button type="button" class="btn btn-outline-danger my-2 my-sm-0" ng-click="deleteSensor(i.address)">
                             Usuń
                         </button>
                     </div>

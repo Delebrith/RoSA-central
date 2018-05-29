@@ -1,0 +1,6 @@
+// autor: Tomasz Nowak
+
+To run script sniff_udp.py, you need:
+- python3 interpreter
+- scapy library (https://github.com/secdev/scapy)
+- root privilages

@@ -1,7 +1,7 @@
 #pragma once
 #include "udp_socket.h"
 #include "address.h"
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <vector>
 #include <netdb.h>
@@ -43,7 +43,7 @@ public:
 protected:
     UDPsocket socket;
     std::vector<char> inputBuffer;
-    std::map<const Address, Callback*> callbackMap;
+    std::unordered_map<const Address, Callback*> callbackMap;
     Callback *defaultCallback;
 };
 }

@@ -51,10 +51,12 @@ public:
 
     virtual void callbackOnReceive(common::Address &address, char *msg, size_t length)
     {
+        static std::hash<const common::Address> hasher;
         if(length < 512)
             msg[length] = '\0';
         std::cout << name << " - received: '" << msg << "'\nfrom: ";
         address.print(std::cout);
+        std::cout << "(address hash: " << hasher(address) << ")\n";
         std::cout << std::endl;
     }
 
@@ -91,7 +93,7 @@ void test_udp_client(int argc, char **argv)
 int main(int argc, char **argv)
 {
     activate_rest_service(U(argv[1]));
-    //test_udp_client(argc, argv);
+    test_udp_client(argc, argv);
     std::cout << "press enter to exit...";
     while (std::cin.get() != '\n')
     {

@@ -102,4 +102,11 @@ bool common::Address::operator<(const common::Address &other) const
     return std::memcmp(getAddress(), other.getAddress(), addressLength) < 0;
 }
 
+bool common::Address::operator==(const common::Address &other) const
+{
+    if(addressLength != other.addressLength)
+        return false;
+    return std::memcmp(getAddress(), other.getAddress(), addressLength) == 0;
+}
+
 #undef FATAL_ERROR

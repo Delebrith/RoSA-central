@@ -1,16 +1,13 @@
 #include "udp_client.h"
-#include "error_handler.h"
+#include "exception.h"
 #include <unistd.h>
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <iostream>
 #endif
-
-#define FATAL_ERROR(msg) ErrorHandler::getInstance().fatalError(msg, __LINE__ ,__FILE__)
-#define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
 common::UDPClient::UDPClient(size_t input_buffer_size)
     : socket(0), inputBuffer(input_buffer_size, 0), defaultCallback(nullptr) // port 0 - bind socket to an ephemeral port
@@ -33,12 +30,8 @@ common::UDPsocket &common::UDPClient::getSocket()
 int common::UDPClient::receive(char *buffer, size_t size)
 {
     int retval = recvfrom(socket.getFd(), buffer, size, 0, 0, 0);
-#ifdef DEBUG
-    if(retval < 0)
-        ERROR("no data received");
-    else
-        std::cout << "receive without saving address - ok\n";
-#endif
+    if(retval < 0 && errno != EAGAIN && errno != EWOULDBLOCK) // non-standard error (not timeout / resource unavailability)
+        ExceptionInfo::warning("receive failed with errno: " + std::string(strerror(errno)));
     return retval;
 }
 
@@ -46,13 +39,13 @@ int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fi
 {
     int retval = recvfrom(socket.getFd(), buffer, size, 0, address_to_fill_in.getAddress(),
                           address_to_fill_in.getAddressLengthPointer());
-#ifdef DEBUG
-    if(retval < 0)
-        ERROR("no data received");
-    else
+    if(retval < 0 && errno != EAGAIN && errno != EWOULDBLOCK) // non-standard error (not timeout / resource unavailability)
+        ExceptionInfo::warning("receive failed with errno: " + std::string(strerror(errno)));
+#ifndef NDEBUG
+    if(retval > 0)
     {
-        std::cout << "client received answer from:\n";
-        address_to_fill_in.print(std::cout);
+        std::cerr << "client received answer from: ";
+        address_to_fill_in.print(std::cerr);
     }
 #endif
     return retval;
@@ -61,8 +54,8 @@ int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fi
 int common::UDPClient::send(const char *data, size_t size, const Address &address)
 {
     int retval = sendto(socket.getFd(), data, size, 0, address.getAddress(), address.getAddressLength());
-    if(retval < 0) // handling of this error will be changed
-        ERROR("failed to send data");
+    if(retval < 0) // sending UDP packet should generally not fail, even if packet will not be received
+        ExceptionInfo::warning("send failed with errno: " + std::string(strerror(errno)));
     return retval;
 }
 
@@ -88,9 +81,9 @@ void common::UDPClient::receiveAndCallCallbacks()
                     defaultCallback->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
                 continue;
             }
-#ifdef DEBUG
-            if(it->second == nullptr)
-                FATAL_ERROR("callback in callbackMap is nullptr");
+#ifndef NDEBUG
+            if(it->second == nullptr) // it can happen only due to programmer error, so in Release this check will be disabled
+                throw Exception("callback in callbackMap is nullptr");
 #endif
             it->second->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
             callbackMap.erase(it);
@@ -103,6 +96,3 @@ void common::UDPClient::receiveAndCallCallbacks()
         }
     }
 }
-
-#undef ERROR
-#undef FATAL_ERROR

@@ -92,13 +92,21 @@ void test_udp_client(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    activate_rest_service(U(argv[1]));
-    test_udp_client(argc, argv);
-    std::cout << "press enter to exit...";
-    while (std::cin.get() != '\n')
+    try
     {
-        continue;
+        activate_rest_service(U(argv[1]));
+        test_udp_client(argc, argv);
+        std::cout << "press enter to exit...";
+        while (std::cin.get() != '\n')
+        {
+            continue;
+        }
+        close_rest_service();
+        exit(0);
     }
-    close_rest_service();
-    exit(0);
+    catch(const std::exception &ex)
+    {
+        std::cerr << ex.what() << "\n";
+        return -1;
+    }
 }

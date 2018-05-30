@@ -1,12 +1,9 @@
 #include "address.h"
-#include "error_handler.h"
+#include "exception.h"
 #include <cstring>
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <iostream>
 #endif
-
-
-#define FATAL_ERROR(msg) ErrorHandler::getInstance().fatalError(msg, __LINE__ ,__FILE__)
 
 common::AddressInfo::AddressInfo(const char *host, const char *port, int socktype)
     : ai(nullptr)
@@ -16,10 +13,10 @@ common::AddressInfo::AddressInfo(const char *host, const char *port, int socktyp
     hints.ai_family = AF_INET6;
     hints.ai_socktype = socktype;
     if(getaddrinfo(host, port, &hints, &ai) != 0)
-        FATAL_ERROR("getaddrinfo");    
-#ifdef DEBUG
-    std::cout << "getaddrinfo result:\n";
-    forEach([](addrinfo *ai) { Address(ai).print(std::cout); });
+        throw ExceptionInfo("getaddrinfo failed with errno: " + std::string(strerror(errno)));
+#ifndef NDEBUG
+    std::cerr << "getaddrinfo result:\n";
+    forEach([](addrinfo *ai) { Address(ai).print(std::cerr); });
 #endif
 }
 
@@ -108,5 +105,3 @@ bool common::Address::operator==(const common::Address &other) const
         return false;
     return std::memcmp(getAddress(), other.getAddress(), addressLength) == 0;
 }
-
-#undef FATAL_ERROR

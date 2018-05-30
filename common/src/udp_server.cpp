@@ -1,12 +1,10 @@
 #include "udp_server.h"
-#include "error_handler.h"
+#include "exception.h"
 #include <unistd.h>
 #include <iostream>
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <iostream>
 #endif
-
-#define ERROR(msg) ErrorHandler::getInstance().error(msg, __LINE__ ,__FILE__)
 
 common::UDPServer::UDPServer(uint16_t port)
     : socket(port), clientAddressIsCorrect(false)
@@ -27,13 +25,14 @@ int common::UDPServer::receive(char *buffer, size_t size)
     int retval = recvfrom(socket.getFd(), buffer, size, 0, clientAddress.getAddress(), clientAddress.getAddressLengthPointer());
     if(retval < 0)
     {
-        ERROR("no data received");
         clientAddressIsCorrect = false;
+        if(errno != EAGAIN && errno != EWOULDBLOCK) // non-standard error (not timeout / resource unavailability)
+            ExceptionInfo::warning("receive failed with errno: " + std::string(strerror(errno)));
         return retval;
     }
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cout << "received from: ";
-    clientAddress.print(std::cout);
+    clientAddress.print(std::cerr);
 #endif
     clientAddressIsCorrect = true;
     return retval;
@@ -43,13 +42,12 @@ int common::UDPServer::send(const char *data, size_t size)
 {
     if(!clientAddressIsCorrect)
     {
-        ERROR("unknown client");
+        throw Exception("attemt to send message from server before calling receive - client address is unknown");
         return false;
     }
+    clientAddressIsCorrect = false; // server works in simple model receive->send->receive..., so no multiple sends will be allowed
     int retval = sendto(socket.getFd(), data, size, 0, clientAddress.getAddress(), clientAddress.getAddressLength());
-    if(retval < 0) // handling of this error will be changed
-        ERROR("failed to send data");
+    if(retval < 0) // sending UDP packet should generally not fail, even if packet will not be received
+        ExceptionInfo::warning("send failed with errno: " + std::string(strerror(errno)));
     return retval;
 }
-
-#undef ERROR

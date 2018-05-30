@@ -10,8 +10,13 @@ common::UDPsocket::UDPsocket(uint16_t port)
     if(fd < 0)
         throw Exception("creating socket failed with errno: " + std::string(strerror(errno)));
     int disable = 0;
-    if(setsockopt(fd, SOL_SOCKET, IPV6_V6ONLY, &disable, sizeof(int)) < 0) // it MIGHT be unsupported - only waring on fail
+    // disabling option IPV6_V6ONLY might be unsupported, so if it fails, it is ignored unlike other errors
+    if(setsockopt(fd, SOL_SOCKET, IPV6_V6ONLY, &disable, sizeof(int)) < 0)
+#ifndef NDEBUG
         ExceptionInfo::warning("disabling setsockopt(IPV6ONLY) failed with errno: " + std::string(strerror(errno)));
+#else
+    {} // ignore
+#endif
     int enable = 1;
     if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
         throw Exception("enabling setsockopt(SO_REUSEADDR) failed with errno: " + std::string(strerror(errno)));

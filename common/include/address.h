@@ -8,7 +8,7 @@ namespace common
 class AddressInfo
 {
 public:
-    AddressInfo(const char *host, const char *port, int socktype);
+    AddressInfo(const char *host, const char *port, int socktype = SOCK_DGRAM);
     ~AddressInfo();
     AddressInfo(const AddressInfo &other) = delete;
     void operator=(const AddressInfo &other) = delete;
@@ -40,10 +40,16 @@ public:
     Address(uint16_t port);
     Address(const addrinfo *ai);
     Address(const AddressInfo &ai);
+    Address(const std::string &host, uint16_t port);
+    Address(const std::string &host, const std::string &port);
     sockaddr* getAddress();
     const sockaddr* getAddress() const;
     socklen_t getAddressLength() const;
     socklen_t* getAddressLengthPointer();
+    std::string hostToString() const;
+    std::string portToString() const;
+    std::string toString() const;
+    uint16_t port() const;
     void print(std::ostream &os);
     bool operator<(const Address &other) const; // enables to use Addresses as map keys
     bool operator==(const Address &other) const;

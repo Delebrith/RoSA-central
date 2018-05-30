@@ -59,10 +59,16 @@ common::Address::Address(const addrinfo *ai)
 }
 
 common::Address::Address(const AddressInfo &ai)
-    : addressLength(ai.getResult()->ai_addrlen)
-{
-    std::memcpy(&address, ai.getResult()->ai_addr, addressLength);
-}
+    : Address(ai.getResult())
+{}
+
+common::Address::Address(const std::string &host, uint16_t port)
+    : Address(AddressInfo(host.c_str(), std::to_string(port).c_str()).getResult())
+{}
+
+common::Address::Address(const std::string &host, const std::string &port)
+    : Address(AddressInfo(host.c_str(), port.c_str()).getResult())
+{}
 
 sockaddr *common::Address::getAddress()
 {
@@ -84,12 +90,43 @@ socklen_t* common::Address::getAddressLengthPointer()
     return &addressLength;
 }
 
+std::string common::Address::hostToString() const
+{
+    char address_str[INET6_ADDRSTRLEN];
+    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICSERV);
+    return std::string(address_str, INET6_ADDRSTRLEN);
+}
+
+std::string common::Address::portToString() const
+{
+    char port_str[6]; // max port number has 5 digits
+    getnameinfo(getAddress(), addressLength, 0, 0, port_str, 6, NI_NUMERICSERV);
+    return std::string(port_str, 6);
+}
+
+std::string common::Address::toString() const
+{
+    std::ostringstream oss;
+    char address_str[INET6_ADDRSTRLEN];
+    char port_str[6];
+    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, port_str, 6, NI_NUMERICSERV);
+    oss << address_str << " :" << port_str;
+    return oss.str();
+}
+
+uint16_t common::Address::port() const
+{
+    if(addressLength == sizeof(sockaddr_in6))
+        return ntohs(address.sin6_port);
+    else if(addressLength == sizeof(sockaddr_in))
+        return ntohs(reinterpret_cast<sockaddr_in*>(&address)->sin_port);
+    else
+        throw Exception("Address length (" + addressLength + ") does not match neither IPV6 nor IPV4");
+}
+
 void common::Address::print(std::ostream &os)
 {
-    static char address_str[INET6_ADDRSTRLEN];
-    static char port_str[6];
-    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, port_str, 6, NI_NUMERICSERV);
-    os << address_str << " :" << port_str << "\n";
+    os << toString() << "\n";
 }
 
 bool common::Address::operator<(const common::Address &other) const

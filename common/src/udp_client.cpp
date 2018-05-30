@@ -9,35 +9,59 @@
 #include <iostream>
 #endif
 
-common::UDPClient::UDPClient(size_t input_buffer_size)
-    : socket(0), inputBuffer(input_buffer_size, 0), defaultCallback(nullptr) // port 0 - bind socket to an ephemeral port
+common::UDPClient::UDPClient(uint16_t port, size_t input_buffer_size, std::unique_ptr<Callback> default_callback)
+    : sendSocket(port), receiveSocket(port + 1), inputBuffer(input_buffer_size, 0), defaultCallback(default_callback)
 {}
 
-common::UDPClient::UDPClient(size_t input_buffer_size, Callback *default_callback)
-    : socket(0), inputBuffer(input_buffer_size, 0), defaultCallback(default_callback) // port 0 - bind socket to an ephemeral port
-{}
-
-void common::UDPClient::setDefaultCallback(common::UDPClient::Callback *default_callback)
+common::UDPClient::UDPClient(common::UDPsocket &send_socket, common::UDPsocket &receive_socket, size_t input_buffer_size, std::unique_ptr<common::UDPClient::Callback> default_callback)
+    : sendSocket(send_socket), receiveSocket(receive_socket), inputBuffer(input_buffer_size, 0), defaultCallback(default_callback)
 {
-    defaultCallback = default_callback;
+    if(receiveSocket.getAddress().port() - sendSocket.getAddress().port() != 1)
+        throw Exception("receiveSocket in UDPClient must be bound at port 1 greater than sendSocket");
 }
 
-common::UDPsocket &common::UDPClient::getSocket()
+common::UDPClient::~UDPClient()
 {
-    return socket;
+    char magic = 255;
+    // if receiverThreadFunction gets such message from address to which sendSocket is bound, thread stops receiving
+    send(&magic, 1, receiveSocket.getAddress());
+    receiverThread.join();
 }
 
-int common::UDPClient::receive(char *buffer, size_t size)
+int common::UDPClient::send(const char *data, size_t size, const Address &address)
 {
-    int retval = recvfrom(socket.getFd(), buffer, size, 0, 0, 0);
-    if(retval < 0 && errno != EAGAIN && errno != EWOULDBLOCK) // non-standard error (not timeout / resource unavailability)
-        ExceptionInfo::warning("receive failed with errno: " + std::string(strerror(errno)));
+    int retval;
+    {
+        std::unique_lock lock(sendSocketMutex);
+        retval = sendto(sendSocket.getFd(), data, size, 0, address.getAddress(), address.getAddressLength());
+    }
     return retval;
+}
+
+void common::UDPClient::sendAndSaveCallback(const std::string &message, const common::Address &address, std::unique_ptr<common::UDPClient::Callback> callback)
+{
+    int retval = send(message.c_str(), message.length(), address);
+    if(retval < 0)
+        throw ExceptionInfo("send to address " + address.toString() + " failed with retval: " + std::to_string(retval) + " and errno: " + std::string(strerror(errno)));
+    {
+        std::unique_lock lock(callbackMapMutex);
+        auto it = callbackMap.find(address);
+        if(it == callbackMap.end())
+            throw ExceptionInfo("callback for address " + address.toString() + " not added to the map - it already exists");
+        callbackMap.emplace_hint(it, )
+    }
+}
+
+void common::UDPClient::addToMessageQueue(Callback *callback, const common::Address &address,
+                                          const char *output_msg, size_t output_msg_length)
+{
+    if(send(output_msg, output_msg_length, address) > 0)
+        callbackMap[address] = callback;
 }
 
 int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fill_in)
 {
-    int retval = recvfrom(socket.getFd(), buffer, size, 0, address_to_fill_in.getAddress(),
+    int retval = recvfrom(receiveSocket.getFd(), buffer, size, 0, address_to_fill_in.getAddress(),
                           address_to_fill_in.getAddressLengthPointer());
     if(retval < 0 && errno != EAGAIN && errno != EWOULDBLOCK) // non-standard error (not timeout / resource unavailability)
         ExceptionInfo::warning("receive failed with errno: " + std::string(strerror(errno)));
@@ -51,22 +75,7 @@ int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fi
     return retval;
 }
 
-int common::UDPClient::send(const char *data, size_t size, const Address &address)
-{
-    int retval = sendto(socket.getFd(), data, size, 0, address.getAddress(), address.getAddressLength());
-    if(retval < 0) // sending UDP packet should generally not fail, even if packet will not be received
-        ExceptionInfo::warning("send failed with errno: " + std::string(strerror(errno)));
-    return retval;
-}
-
-void common::UDPClient::addToMessageQueue(Callback *callback, const common::Address &address,
-                                          const char *output_msg, size_t output_msg_length)
-{
-    if(send(output_msg, output_msg_length, address) > 0)
-        callbackMap[address] = callback;
-}
-
-void common::UDPClient::receiveAndCallCallbacks()
+void common::UDPClient::receiverThreadFunction()
 {
     Address addr;
     while(!callbackMap.empty())
@@ -83,7 +92,7 @@ void common::UDPClient::receiveAndCallCallbacks()
             }
 #ifndef NDEBUG
             if(it->second == nullptr) // it can happen only due to programmer error, so in Release this check will be disabled
-                throw Exception("callback in callbackMap is nullptr");
+                ExceptionInfo::warning("callback in callbackMap for address " + it->first->toString() + " is nullptr");
 #endif
             it->second->callbackOnReceive(addr, reinterpret_cast<char*>(inputBuffer.data()), retval);
             callbackMap.erase(it);

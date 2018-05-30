@@ -10,8 +10,8 @@ class AddressInfo
 public:
     AddressInfo(const char *host, const char *port, int socktype = SOCK_DGRAM);
     ~AddressInfo();
-    AddressInfo(const AddressInfo &other) = delete;
-    void operator=(const AddressInfo &other) = delete;
+    AddressInfo(const AddressInfo &) = delete;
+    void operator=(const AddressInfo &) = delete;
     AddressInfo(AddressInfo &&other);
     const addrinfo* getResult() const;
 
@@ -50,9 +50,11 @@ public:
     std::string portToString() const;
     std::string toString() const;
     uint16_t port() const;
-    void print(std::ostream &os);
+    void incrementPort(); // 'strange' function, used in UDPServer (it sends answer to port from which message was received + 1)
+    void print(std::ostream &os) const;
     bool operator<(const Address &other) const; // enables to use Addresses as map keys
     bool operator==(const Address &other) const;
+    bool operator!=(const Address &other) const;
 
 private:
     sockaddr_in6 address;

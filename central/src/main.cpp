@@ -74,7 +74,7 @@ void test_udp_client(int argc, char **argv)
     common::Address server_address2(argv[1], argv[3]);
 
     std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
-    common::UDPClient client(6000, 512, std::move(default_callback));
+    static common::UDPClient client(6000, 512, std::move(default_callback));
     std::cout << "UDP client started\n";
     client.sendAndSaveCallback("hello1", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback1")));
     client.sendAndSaveCallback("hello2", server_address2, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback2")));
@@ -84,9 +84,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        activate_rest_service(U(argv[1]));
+        activate_rest_service(U("localhost"));
         test_udp_client(argc, argv);
-        std::cout << "press enter to exit...";
+        std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {
             continue;

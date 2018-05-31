@@ -65,19 +65,18 @@ private:
 void test_udp_client(int argc, char **argv)
 {
     std::cout << "\nTesting UDPClient...\n";
-    if(argc != 4)
+    if(argc != 3)
     {
-        std::cout << "Usage: " << argv[0] << " <host> <port1> <port2>\n";
+        std::cout << "Usage: " << argv[0] << " <host> <port1>\n";
         return;
     }
     common::Address server_address1(argv[1], argv[2]);
-    common::Address server_address2(argv[1], argv[3]);
 
     std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
     static common::UDPClient client(6000, 512, std::move(default_callback));
     std::cout << "UDP client started\n";
-    client.sendAndSaveCallback("hello1", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback1")));
-    client.sendAndSaveCallback("hello2", server_address2, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback2")));
+    client.sendAndSaveCallback("set_threshold 10", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback1")));
+    client.sendAndSaveCallback("get_value", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback1")));
 }
 
 int main(int argc, char **argv)

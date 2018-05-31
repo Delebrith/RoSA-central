@@ -19,7 +19,7 @@ common::UDPClient::UDPClient(common::UDPsocket &send_socket, common::UDPsocket &
     : sendSocket(send_socket), receiveSocket(receive_socket), inputBuffer(input_buffer_size, 0), defaultCallback(std::move(default_callback)),
       receiverThread(&common::UDPClient::receiverThreadFunction, std::ref(*this))
 {
-    if(receiveSocket.getAddress().port() - sendSocket.getAddress().port() != 1)
+    if(receiveSocket.getAddress().getPort() - sendSocket.getAddress().getPort() != 1)
         throw Exception("receiveSocket in UDPClient must be bound at port 1 greater than sendSocket");
 }
 
@@ -34,7 +34,7 @@ common::UDPClient::~UDPClient()
         ExceptionInfo::warning("CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
     receiverThread.join();
 #ifndef NDEBUG
-    std::cerr << "ok\n";
+    std::cerr << "receiverThread joined\n";
 #endif
 }
 
@@ -107,15 +107,10 @@ bool common::UDPClient::handleReceiveAndCheckIfEnd(const common::Address &addr, 
 #endif
         callback->callbackOnReceive(addr, message);
     }
-    else if(addr != sendSocket.getAddress())
-    {
-        std::cerr << "addresses " << addr.toString() << " and " << sendSocket.getAddress().toString() << " differ\n";
-    }
-
-//    else if(addr == sendSocket.getAddress()) // 'magic' message - from sending socket of the same class instance
-//        return message[0] == -1; // the only place in which this function can return true
-//    else if(defaultCallback.get() != nullptr)
-//        defaultCallback->callbackOnReceive(addr, message);
+    else if(message[0] == -1) // 'magic' message - end if it came from sendSocket of the same class instance
+        return addr.isLoopback(sendSocket.getAddress().getPort()); // the only place in which this function can return true
+    else if(defaultCallback.get() != nullptr)
+        defaultCallback->callbackOnReceive(addr, message);
     return false;
 }
 

@@ -76,8 +76,13 @@ void test_udp_client(int argc, char **argv)
     std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
     static common::UDPClient client(6000, 512, std::move(default_callback));
     std::cout << "UDP client started\n";
-    client.sendAndSaveCallback("hello1", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback1")));
-    client.sendAndSaveCallback("hello2", server_address2, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback2")));
+    auto send_message_thread = [&](const common::Address &addr, const std::string msg) {
+        client.sendAndSaveCallback(msg, addr, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback(" + msg + ")")));
+    };
+    std::thread thread1(send_message_thread, std::ref(server_address1), "hello1");
+    std::thread thread2(send_message_thread, std::ref(server_address2), "hello2");
+    thread1.join();
+    thread2.join();
 }
 
 int main(int argc, char **argv)

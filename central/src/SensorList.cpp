@@ -45,25 +45,24 @@ void SensorList::set_values(std::string address, float new_current_value, float 
     }
 }
 
-void SensorList::set_status(std::string address, SensorList::SensorStatus new_status) {
-    try {
-        std::lock_guard<std::mutex> lock(mutex);
-        sensors.at(address).status = new_status;
-    }
-    catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
-    }
-}
-
 SensorList::SensorState SensorList::get_sensor_state(std::string address) {
     SensorState state;
+    SensorInfo info;
     try {
         std::lock_guard<std::mutex> lock(mutex);
-        state = sensors.find(address)->second;
+        info = sensors.find(address)->second;
     }
     catch (std::out_of_range &){
         throw std::invalid_argument("sensor with address" + address +"doesn't exist");
     }
+    state.threshold = info.threshold;
+    state.current_value = info.current_value;
+    state.typical_value = info.typical_value;
+    if (std::difftime(info.last_answer, info.last_question) > 0 ||
+        std::difftime(info.last_question, std::time(nullptr)) < 5)
+        state.status = NOCOMMUNICATION;
+    else
+        state.status = CORRECT;
     return state;
 }
 
@@ -71,8 +70,37 @@ std::vector<std::pair<std::string, SensorList::SensorState>> SensorList::get_sen
     std::vector<std::pair<std::string, SensorList::SensorState>> tmp;
     mutex.lock();
     for (auto &it: sensors) {
-        tmp.emplace_back(it.first, it.second);
+        SensorState state;
+        state.threshold = it.second.threshold;
+        state.current_value = it.second.current_value;
+        state.typical_value = it.second.typical_value;
+        if (std::difftime(it.second.last_answer, it.second.last_question) > 0 ||
+            std::difftime(it.second.last_question, std::time(nullptr)) < 5)
+            state.status = CORRECT;
+        else
+            state.status = NOCOMMUNICATION;
+        tmp.emplace_back(it.first, state);
     }
     mutex.unlock();
     return tmp;
+}
+
+void SensorList::set_last_question(std::string address, std::time_t last_question) {
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        sensors.at(address).last_question = last_question;
+    }
+    catch (std::out_of_range &) {
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    }
+}
+
+void SensorList::set_last_answer(std::string address, std::time_t last_answer) {
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        sensors.at(address).last_answer = last_answer;
+    }
+    catch (std::out_of_range &) {
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    }
 }

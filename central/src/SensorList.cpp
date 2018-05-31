@@ -1,17 +1,8 @@
 #include "SensorList.h"
 
-SensorList::SensorState::SensorState(float current_value, float typical_value, float threshold,
-                                     SensorList::SensorStatus status) : current_value(current_value),
-                                                                        typical_value(typical_value),
-                                                                        threshold(threshold), status(status) {}
-
-SensorList::SensorState::SensorState(float threshold) : threshold(threshold) {}
-
-SensorList::SensorState::SensorState() {}
-
-void SensorList::add_sensor(std::string address, float threshold) {
+void SensorList::add_sensor(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
-    sensors.emplace(address, threshold);
+    sensors.emplace(address);
 }
 
 void SensorList::erase_sensor(std::string address) {
@@ -20,40 +11,39 @@ void SensorList::erase_sensor(std::string address) {
         std::lock_guard<std::mutex> lock(mutex);
         i = sensors.erase(address);
     }
-    if(i == 0)
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+    if (i == 0)
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
 }
 
 void SensorList::set_threshold(std::string address, float new_threshold) {
-    try {
-        std::lock_guard<std::mutex> lock(mutex);
-        sensors.at(address).threshold = new_threshold;
-    }
-    catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
-    }
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    iterator->second.threshold = new_threshold;
+    iterator->second.last_answer = std::time(nullptr);
 }
 
 void SensorList::set_values(std::string address, float new_current_value, float new_typical_value) {
-    try {
-        std::lock_guard<std::mutex> lock(mutex);
-        sensors.at(address).current_value = new_current_value;
-        sensors.at(address).typical_value = new_typical_value;
-    }
-    catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
-    }
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    iterator->second.current_value = new_current_value;
+    iterator->second.typical_value = new_typical_value;
+    iterator->second.last_answer = std::time(nullptr);
 }
 
 SensorList::SensorState SensorList::get_sensor_state(std::string address) {
     SensorState state;
     SensorInfo info;
-    try {
+
+    {
         std::lock_guard<std::mutex> lock(mutex);
-        info = sensors.find(address)->second;
-    }
-    catch (std::out_of_range &){
-        throw std::invalid_argument("sensor with address" + address +"doesn't exist");
+        auto iterator = sensors.find(address);
+        if (iterator == sensors.end())
+            throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        info = iterator->second;
     }
     state.threshold = info.threshold;
     state.current_value = info.current_value;
@@ -68,7 +58,7 @@ SensorList::SensorState SensorList::get_sensor_state(std::string address) {
 
 std::vector<std::pair<std::string, SensorList::SensorState>> SensorList::get_sensors() {
     std::vector<std::pair<std::string, SensorList::SensorState>> tmp;
-    mutex.lock();
+    std::lock_guard<std::mutex> lock(mutex);
     for (auto &it: sensors) {
         SensorState state;
         state.threshold = it.second.threshold;
@@ -81,26 +71,35 @@ std::vector<std::pair<std::string, SensorList::SensorState>> SensorList::get_sen
             state.status = NOCOMMUNICATION;
         tmp.emplace_back(it.first, state);
     }
-    mutex.unlock();
     return tmp;
 }
 
-void SensorList::set_last_question(std::string address, std::time_t last_question) {
-    try {
-        std::lock_guard<std::mutex> lock(mutex);
-        sensors.at(address).last_question = last_question;
-    }
-    catch (std::out_of_range &) {
+void SensorList::set_last_question(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
         throw std::invalid_argument("sensor with address" + address + "doesn't exist");
-    }
+    iterator->second.last_question = std::time(nullptr);
 }
 
-void SensorList::set_last_answer(std::string address, std::time_t last_answer) {
-    try {
-        std::lock_guard<std::mutex> lock(mutex);
-        sensors.at(address).last_answer = last_answer;
-    }
-    catch (std::out_of_range &) {
+void SensorList::set_last_answer(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
         throw std::invalid_argument("sensor with address" + address + "doesn't exist");
-    }
+    iterator->second.last_answer = std::time(nullptr);
+}
+
+bool SensorList::exist(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    return iterator != sensors.end();
+}
+
+std::time_t SensorList::get_last_question(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    return iterator->second.last_question;
 }

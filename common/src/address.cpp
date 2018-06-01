@@ -1,5 +1,6 @@
 #include "address.h"
 #include "exception.h"
+#include  <arpa/inet.h>
 #include <cstring>
 #include <sstream>
 #ifndef NDEBUG
@@ -114,25 +115,27 @@ uint16_t common::Address::getPort() const
 std::string common::Address::hostToString() const
 {
     char address_str[INET6_ADDRSTRLEN];
-    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
-    return std::string(address_str, INET6_ADDRSTRLEN);
+    int retval = getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
+    if(retval != 0)
+    {
+        if(retval == EAI_SYSTEM)
+            throw ExceptionInfo("getnameinfo failed with errno: " + std::string(strerror(errno)));
+        else
+            throw ExceptionInfo("getnameinfo failed with retval: " + std::string(gai_strerror(retval)));
+    }
+    if(strncmp(address_str, "::ffff:", 7) == 0)
+        return std::string(address_str + 7); // ugly, but it is the only way to return IPv4 string from IPv6-mapped IPv4 address
+    return std::string(address_str);
 }
 
 std::string common::Address::portToString() const
 {
-    char port_str[6]; // max port number has 5 digits
-    getnameinfo(getAddress(), addressLength, 0, 0, port_str, 6, NI_NUMERICSERV);
-    return std::string(port_str, 6);
+    return std::to_string(getPort());
 }
 
 std::string common::Address::toString() const
 {
-    std::ostringstream oss;
-    char address_str[INET6_ADDRSTRLEN];
-    char port_str[6];
-    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, port_str, 6, NI_NUMERICHOST | NI_NUMERICSERV);
-    oss << address_str << " :" << port_str;
-    return oss.str();
+    return hostToString() + " :" + portToString();
 }
 
 void common::Address::print(std::ostream &os) const

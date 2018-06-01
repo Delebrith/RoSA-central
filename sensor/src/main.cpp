@@ -21,7 +21,7 @@
 #define SERVER2_HOST "localhost"
 #define SERVER2_PORT 7501
 
-std::atomic_int thres_hold(10);
+std::atomic_int threshold(100);
 std::atomic_int current_value(40);
 std::atomic_int typical(0);
 
@@ -99,7 +99,7 @@ void updating_values_thread()
             amount++;
         typical = calculate_median(last60, amount);
         print(" value: " + std::to_string(current_value)+" median "+std::to_string(typical));
-        if(current_value > thres_hold)
+        if(current_value > threshold)
         {
             print("value too big. Sending alarm");
             alarmStr = "alarm current_value: "+ std::to_string(current_value) +" typical_value: " + std::to_string(typical);
@@ -146,8 +146,8 @@ int set_threshold_receive_thread()
                     if(tmp < 100)
                     {
                         print("setting new threshold to: " + std::to_string(tmp));
-                        thres_hold = tmp;
-                        print( "threshold setted to: " + std::to_string(thres_hold));
+                        threshold = tmp;
+                        print( "threshold setted to: " + std::to_string(threshold));
 
                         answerStr = "threshold: " + std::to_string(tmp);
                         if(server.send(answerStr.c_str(), retval) > 0)

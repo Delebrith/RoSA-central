@@ -10,13 +10,18 @@
 #include <vector>
 
 #include <udp_server.h>
+#include <udp_client.h>
 
 #define SENSOR_PORT1 7000
 #define SENSOR_PORT2 7001
+
 #define SERVER_HOST "localhost"
 #define SERVER_PORT 7500
 
-std::atomic_int thres_hold(0);
+#define SERVER2_HOST "localhost"
+#define SERVER2_PORT 7501
+
+std::atomic_int thres_hold(10);
 std::atomic_int current_value(40);
 std::atomic_int typical(0);
 
@@ -51,17 +56,38 @@ int calculate_median(int * array, uint8_t size)
         return (medianVec.at((size/2)-1) + medianVec.at((size/2))) / 2;
 }
 
+class Callback : public common::UDPClient::Callback
+{
+public:
+    Callback(const std::string str)
+            : name(str)
+    {}
+
+    virtual void callbackOnReceive(const common::Address &address, std::string msg)
+    {
+        static std::hash<const common::Address> hasher;
+        std::cout << name << " - received: '" << msg << "'\nfrom: ";
+        address.print(std::cout);
+        std::cout << "(address hash: " << hasher(address) << ")\n";
+        std::cout << std::endl;
+    }
+
+private:
+    std::string name;
+};
+
 void updating_values_thread()
 {
     int last60[60];
     std::vector<int> medianVec;
     int pointer = 0;
     int amount = 0;
+    std::string alarmStr;
 
     common::Address server_address(SERVER_HOST, SERVER_PORT);
+    common::Address server_address2(SERVER_HOST, SERVER_PORT);
     std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
     static common::UDPClient client(6000, 512, std::move(default_callback));
-    client.sendAndSaveCallback("set_threshold 10", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
 
     while(1)
     {
@@ -76,7 +102,17 @@ void updating_values_thread()
         if(current_value > thres_hold)
         {
             print("value too big. Sending alarm");
-            client.sendAndSaveCallback("alarm", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
+            alarmStr = "alarm current_value: "+ std::to_string(current_value) +" typical_value: " + std::to_string(typical);
+            try {
+                client.sendAndSaveCallback(alarmStr, server_address, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
+            }
+            catch(const std::exception &ex)
+            {
+                print(ex.what());
+                std::swap(server_address, server_address2);
+                client.sendAndSaveCallback(alarmStr, server_address, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
+            }
+
         }
         sleep(2);
     }

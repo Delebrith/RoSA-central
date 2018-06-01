@@ -1,4 +1,5 @@
 #include <udp_client.h>
+#include <udp_server.h>
 #include <iostream>
 #include <cstring>
 #include "RestService.h"
@@ -9,6 +10,8 @@ using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
 
+
+SensorList sensorList;
 /*
 std::unique_ptr<RestService, std::default_delete<RestService>> rest;
 
@@ -60,16 +63,41 @@ private:
     std::string name;
 };
 
-void execute(Communicator *communicator) {
+void executeScripts(Communicator *communicator) {
     ScriptExecutor executor(communicator);
     executor.execute();
 }
 
-void test_udp_client() {
-    Communicator communicator;
-    execute(&communicator);
-    return;
+void server() {
+    try {
+        char buffer[512];
+        common::UDPServer server(6000);
+        server.getSocket().setSendTimeout(2000);
+        std::cout << "UDP server started\n";
+        while (true) {
+            int retval = server.receive(buffer, 511);
+            if (retval < 0) {
+                std::cout << "error, no data received\n";
+                return;
+            }
+
+            //Todo: rozpisać wpisywanie do listy
+
+
+            std::cout << "Received: " << buffer << "\n";
+            if (server.send(buffer, retval) > 0)
+                std::cout << "Sent answer\n";
+            else
+                std::cout << "Failed to send answer\n";
+            memset(buffer, 0, sizeof(buffer));
+        }
+    }
+    catch (const std::exception &ex) {
+        std::cerr << ex.what() << "\n";
+        return;
+    }
 }
+
 
 
 int main(int argc, char **argv)
@@ -77,7 +105,8 @@ int main(int argc, char **argv)
     try
     {
         //activate_rest_service(U(argv[1]));
-        test_udp_client();
+        Communicator communicator(&sensorList);
+        executeScripts(&communicator);
         std::cout << "press enter to exit...";
         while (std::cin.get() != '\n')
         {

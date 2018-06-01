@@ -10,8 +10,7 @@
 
 class Communicator {
 public:
-    Communicator();
-    //Communicator(common::UDPClient *client, SensorList *sensorList);
+    Communicator(SensorList *sensorList);
 
     void add_sensor(std::string &address, float threshold);
 
@@ -32,18 +31,26 @@ private:
         Callback_set_threshold(SensorList *sensorList) : sensorList(sensorList) {}
 
         virtual void callbackOnReceive(const common::Address &address, std::string msg) {
-            std::vector<std::string> answer_splited;
-            boost::split(answer_splited, msg, [](char c) { return c == ' '; });
-            if (answer_splited.size() > 1) {
-                if (answer_splited[0] == "threshold:") {
-                    float threshold;
-                    threshold = std::stof(answer_splited[1]);
-                    sensorList->set_threshold(address.hostToString(), threshold);
-                    return;
+            std::cout << "Otrzymano: " << msg << ", od: " << address.hostToString() << std::endl;
+            try {
+                std::vector<std::string> answer_splited;
+                boost::split(answer_splited, msg, [](char c) { return c == ' '; });
+                if (answer_splited.size() > 1) {
+                    if (answer_splited[0] == "threshold:") {
+                        float threshold;
+                        threshold = std::stof(answer_splited[1]);
+                        sensorList->set_threshold(address.hostToString(), threshold);
+                        std::cout << "Ustawiono: " << msg << std::endl;
+                        std::cout << "Ustawiono: " << msg << std::endl;
+                        return;
+                    }
                 }
+                std::cout << "Bad message from " << address.hostToString() << ": " << msg << std::endl;
+                std::cout << "Expected: threshold: <value> " << std::endl;
             }
-            std::cout << "Bad message from " << address.hostToString() << ": " << msg << std::endl;
-            std::cout << "Expected: threshold: <value> " << std::endl;
+            catch (std::logic_error &e) {
+                std::cout << e.what() << std::endl;
+            }
         }
 
     private:
@@ -92,7 +99,7 @@ private:
     };
 
     common::UDPClient client;
-    SensorList sensorList;
+    SensorList *sensorList;
 
     /*
     common::Address server_address1(common::AddressInfo(argv[1], argv[2], SOCK_DGRAM).getResult());

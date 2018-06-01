@@ -42,9 +42,10 @@ int common::UDPServer::send(const char *data, size_t size)
 {
     if(!clientAddressIsCorrect)
     {
-        throw Exception("attemt to send message from server before calling receive - client address is unknown");
+        throw Exception("attempt to send message from server before calling receive - client address is unknown");
         return false;
     }
+    clientAddress.incrementPort(); // server sends answer to port from which message was received + 1
     clientAddressIsCorrect = false; // server works in simple model receive->send->receive..., so no multiple sends will be allowed
     int retval = sendto(socket.getFd(), data, size, 0, clientAddress.getAddress(), clientAddress.getAddressLength());
     if(retval < 0) // sending UDP packet should generally not fail, even if packet will not be received

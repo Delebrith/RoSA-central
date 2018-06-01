@@ -29,6 +29,11 @@ int common::UDPsocket::getFd() const
     return fd;
 }
 
+const common::Address &common::UDPsocket::getAddress() const
+{
+    return ownAddress;
+}
+
 void common::UDPsocket::setSendTimeout(unsigned milliseconds)
 {
     timeval timeout = { milliseconds/1000, 1000*(milliseconds%1000) };

@@ -49,20 +49,13 @@ public:
         : name(str)
     {}
 
-    virtual void callbackOnReceive(common::Address &address, char *msg, size_t length)
+    virtual void callbackOnReceive(const common::Address &address, std::string msg)
     {
         static std::hash<const common::Address> hasher;
-        if(length < 512)
-            msg[length] = '\0';
         std::cout << name << " - received: '" << msg << "'\nfrom: ";
         address.print(std::cout);
         std::cout << "(address hash: " << hasher(address) << ")\n";
         std::cout << std::endl;
-    }
-
-    virtual void callbackOnError()
-    {
-        std::cout << "callbackOnError\n";
     }
 
 private:
@@ -77,26 +70,28 @@ void test_udp_client(int argc, char **argv)
         std::cout << "Usage: " << argv[0] << " <host> <port1> <port2>\n";
         return;
     }
-    common::Address server_address1(common::AddressInfo(argv[1], argv[2], SOCK_DGRAM).getResult());
-    common::Address server_address2(common::AddressInfo(argv[1], argv[3], SOCK_DGRAM).getResult());
-    Callback callback1("callback1"), callback2("callback2"), default_callback("default callback");
-    common::UDPClient client(512, &default_callback);
-    client.getSocket().setSendTimeout(5000);
-    client.getSocket().setReceiveTimeout(5000);
+    common::Address server_address1(argv[1], argv[2]);
+    common::Address server_address2(argv[1], argv[3]);
+
+    std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
+    static common::UDPClient client(6000, 512, std::move(default_callback));
     std::cout << "UDP client started\n";
-    client.addToMessageQueue(&callback1, server_address1, "hello1", sizeof("hello1"));
-    client.addToMessageQueue(&callback2, server_address2, "hello2", sizeof("hello2"));
-    std::cout << "Sent messages\n";
-    client.receiveAndCallCallbacks();
+    auto send_message_thread = [&](const common::Address &addr, const std::string msg) {
+        client.sendAndSaveCallback(msg, addr, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback(" + msg + ")")));
+    };
+    std::thread thread1(send_message_thread, std::ref(server_address1), "hello1");
+    std::thread thread2(send_message_thread, std::ref(server_address2), "hello2");
+    thread1.join();
+    thread2.join();
 }
 
 int main(int argc, char **argv)
 {
     try
     {
-        activate_rest_service(U(argv[1]));
+        activate_rest_service(U("localhost"));
         test_udp_client(argc, argv);
-        std::cout << "press enter to exit...";
+        std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {
             continue;

@@ -32,13 +32,10 @@ void ScriptExecutor::execute() {
             printf("Listening OFF.\n");
             break;
         } else if (strcmp("", buf) != 0) {
-            printf("Received: %s\n", buf);
             std::string msg(buf);
             return_msg = execute_command(msg);
             strncpy(buf, return_msg.c_str(), sizeof(buf));
             buf[sizeof(buf) - 1] = 0;
-
-            printf("Sending back...\n");
             write(central_out, buf, BUFSIZ);
         }
         memset(buf, 0, sizeof(buf));
@@ -99,13 +96,31 @@ std::string ScriptExecutor::set_threshold(std::vector<std::string> &command) {
 std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
     try {
         SensorList::SensorState state = communicator->get_sensor_state(command[1]);
+        std::string status;
+        if (state.status == SensorList::SensorStatus::NOCOMMUNICATION)
+            status = "no communication";
+        else
+            status = "correct";
         return "Sensor: " + command[1] + " current_value: " + std::to_string(state.current_value) +
                " typical_value: " + std::to_string(state.typical_value) +
-               " threshold: " + std::to_string(state.threshold);
+               " threshold: " + std::to_string(state.threshold) +
+               "status: " + status;
     }
     catch (std::logic_error &error) {
         return error.what();
     }
+}
+
+std::string ScriptExecutor::ask_sensor(std::vector<std::string> &command) {
+    std::cout << "hey" << std::flush;
+    try {
+        std::cout << "ask comm " << std::flush;
+        communicator->ask_for_values(command[1]);
+    }
+    catch (std::logic_error &error) {
+        return error.what();
+    }
+    return "co je?";
 }
 
 /*
@@ -140,6 +155,8 @@ std::string ScriptExecutor::execute_command(std::string &msg) {
         return set_threshold(command);
     if (command[0] == "get_sensor" && command.size() == 2)
         return get_sensor(command);
+    if (command[0] == "ask_sensor" && command.size() == 2)
+        return ask_sensor(command);
     /*if (command[0] == "add_user" && command.size() == 2)
         return add_user(command);
     if (command[0] == "remove_user" && command.size() == 2)

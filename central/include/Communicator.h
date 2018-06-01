@@ -18,7 +18,7 @@ public:
 
     void set_threshold(std::string &address, float new_threshold);
 
-    void ask_for_values(std::string &address, float new_current_value, float new_typical_value);
+    void ask_for_values(std::string &address);
 
     SensorList::SensorState get_sensor_state(std::string &address);
 
@@ -31,7 +31,6 @@ private:
         Callback_set_threshold(SensorList *sensorList) : sensorList(sensorList) {}
 
         virtual void callbackOnReceive(const common::Address &address, std::string msg) {
-            std::cout << "Otrzymano: " << msg << ", od: " << address.hostToString() << std::endl;
             try {
                 std::vector<std::string> answer_splited;
                 boost::split(answer_splited, msg, [](char c) { return c == ' '; });
@@ -40,8 +39,6 @@ private:
                         float threshold;
                         threshold = std::stof(answer_splited[1]);
                         sensorList->set_threshold(address.hostToString(), threshold);
-                        std::cout << "Ustawiono: " << msg << std::endl;
-                        std::cout << "Ustawiono: " << msg << std::endl;
                         return;
                     }
                 }
@@ -82,7 +79,7 @@ private:
             std::vector<std::string> answer_splited;
             boost::split(answer_splited, msg, [](char c) { return c == ' '; });
             if (answer_splited.size() > 3) {
-                if (answer_splited[0] == "current value:" && answer_splited[2] == "typical value:") {
+                if (answer_splited[0] == "current_value:" && answer_splited[2] == "typical_value:") {
                     float new_current_value, new_typical_value;
                     new_current_value = std::stof(answer_splited[1]);
                     new_typical_value = std::stof(answer_splited[3]);
@@ -98,8 +95,9 @@ private:
         SensorList *sensorList;
     };
 
-    common::UDPClient client;
+
     SensorList *sensorList;
+    common::UDPClient client;
 
     /*
     common::Address server_address1(common::AddressInfo(argv[1], argv[2], SOCK_DGRAM).getResult());

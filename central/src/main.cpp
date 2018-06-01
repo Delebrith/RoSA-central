@@ -108,13 +108,7 @@ int main(int argc, char **argv)
         //activate_rest_service(U(argv[1]));
         Communicator communicator(&sensorList);
         executeScripts(&communicator);
-        std::cout << "press enter to exit...";
-        while (std::cin.get() != '\n')
-        {
-            continue;
-        }
         //close_rest_service();
-        exit(0);
     }
     catch(const std::exception &ex)
     {

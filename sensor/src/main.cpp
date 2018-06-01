@@ -68,7 +68,7 @@ int main() {
                         std::cout << "threshold setted to: " << thres_hold << "\n";
 
                         answerStr = "threshold: " + std::to_string(tmp);
-                        if (server.send(answerStr.c_str(), retval) > 0)
+                        if (server.send(answerStr.c_str(), answerStr.size()) > 0)
                             std::cout << "->sent answer {" << answerStr << "}\n";
                         else
                             std::cout << "failed to sent answer\n";
@@ -79,8 +79,9 @@ int main() {
             } else if (std::string(buffer).find("get_value") == 0) {
                 std::cout << "server demanded value" << "\n";
                 answerStr =
-                        "current_value: " + std::to_string(current_value) + " typical_value:" + std::to_string(typical);
-                if (server.send(answerStr.c_str(), retval) > 0)
+                        "current_value: " + std::to_string(current_value) + " typical_value: " +
+                        std::to_string(typical);
+                if (server.send(answerStr.c_str(), answerStr.size()) > 0)
                     std::cout << "->sent answer {" << answerStr << "}\n";
                 else
                     std::cout << "failed to sent answer\n";

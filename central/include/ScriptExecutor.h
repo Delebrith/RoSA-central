@@ -28,6 +28,8 @@ private:
 
     std::string get_sensor(std::vector<std::string> &command);
 
+    std::string ask_sensor(std::vector<std::string> &command);
+
     //std::string add_user(std::vector<std::string> &command);
 
     //Sstd::string erase_user(std::vector<std::string> &command);

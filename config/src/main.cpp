@@ -15,13 +15,11 @@ void help(const char *program_name) {
                                                 "- remove_sensor [sensor_address] \n"
                                                 "- set_threshold [sensor_address] \n"
                                                 "- get_sensor [sensor_address] \n"
-                                                "- add_user [user_name] \n"
-                                                "- remove_user [remove_name] \n";
+                                                "- ask_sensor [sensor_address] \n"
+                                                "- exit \n";
 
     std::exit(1);
 }
-
-void send(std::string msg);
 
 void send(std::string msg) {
     int central_in;
@@ -38,14 +36,10 @@ void send(std::string msg) {
     }
 
     write(central_in, str, sizeof(str));
-
-    perror("Write:");
-
-    read(central_out, str, sizeof(str));
-
-    perror("Read:");
-    std::cout << str << std::endl;
-
+    if (msg != "exit") {
+        read(central_out, str, sizeof(str));
+        std::cout << str << std::endl;
+    }
     close(central_in);
     close(central_out);
 }
@@ -64,6 +58,9 @@ int main(int argc, const char *argv[]) {
             std::string msg = std::string(argv[1]) + " " + argv[2] + " " + argv[3];
             send(msg);
         } else if (std::strcmp(argv[1], "get_sensor") == 0 && argc == 3) {
+            std::string msg = std::string(argv[1]) + " " + argv[2];
+            send(msg);
+        } else if (std::strcmp(argv[1], "ask_sensor") == 0 && argc == 3) {
             std::string msg = std::string(argv[1]) + " " + argv[2];
             send(msg);
         } else if (std::strcmp(argv[1], "add_user") == 0 && argc == 3) {

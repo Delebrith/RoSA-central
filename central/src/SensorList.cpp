@@ -1,4 +1,5 @@
 #include "SensorList.h"
+#include "iostream"
 
 void SensorList::add_sensor(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -50,9 +51,9 @@ SensorList::SensorState SensorList::get_sensor_state(std::string address) {
     state.typical_value = info.typical_value;
     if (std::difftime(info.last_answer, info.last_question) > 0 ||
         std::difftime(info.last_question, std::time(nullptr)) < 5)
-        state.status = NOCOMMUNICATION;
-    else
         state.status = CORRECT;
+    else
+        state.status = NOCOMMUNICATION;
     return state;
 }
 

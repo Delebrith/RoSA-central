@@ -4,15 +4,35 @@
 #include <string>
 #include <time.h>
 #include <unistd.h>
+#include <algorithm>
+#include <atomic>
+#include <sstream>
 #include <vector>
 
 #include <udp_server.h>
 
-#define SENSOR_PORT 7000
+#define SENSOR_PORT1 7000
+#define SENSOR_PORT2 7001
+#define SERVER_HOST "localhost"
+#define SERVER_PORT 7500
 
-int thres_hold = 0;
-int current_value = 40;
-int typical = 0;
+std::atomic_int thres_hold(0);
+std::atomic_int current_value(40);
+std::atomic_int typical(0);
+
+
+void print(std::string s)
+{
+    time_t now = time(0);
+    std::string dt = ctime(&now);
+
+    dt.erase(std::remove(dt.begin(), dt.end(), '\n'), dt.end());
+
+    std::stringstream sout;
+    sout << "<UTC:" << dt << ">" << s << "\n";
+
+    std::cout<<sout.str();
+}
 
 int read_current_value()
 {
@@ -20,51 +40,67 @@ int read_current_value()
     return  a;
 }
 
+int calculate_median(int * array, uint8_t size)
+{
+    std::vector<int> medianVec;
+    medianVec.assign(array, array+size);
+    std::sort(medianVec.begin(), medianVec.end());
+    if(size % 2 == 1)
+        return medianVec.at((size/2));
+    else
+        return (medianVec.at((size/2)-1) + medianVec.at((size/2))) / 2;
+}
+
 void updating_values_thread()
 {
-    std::cout<<"entering thread"<<"\n";
     int last60[60];
     std::vector<int> medianVec;
     int pointer = 0;
     int amount = 0;
+
+    common::Address server_address(SERVER_HOST, SERVER_PORT);
+    std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
+    static common::UDPClient client(6000, 512, std::move(default_callback));
+    client.sendAndSaveCallback("set_threshold 10", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
+
     while(1)
     {
-        pointer = (pointer + 1) % 60;
         current_value = read_current_value();
-        std::cout<<"value: "<<current_value<<"\n";
         last60[pointer] = current_value;
-        if(amount < 60)
-        {
+        pointer = (pointer + 1) % 60;
 
+        if(amount < 60)
+            amount++;
+        typical = calculate_median(last60, amount);
+        print(" value: " + std::to_string(current_value)+" median "+std::to_string(typical));
+        if(current_value > thres_hold)
+        {
+            print("value too big. Sending alarm");
+            client.sendAndSaveCallback("alarm", server_address1, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback")));
         }
-        sleep(60);
+        sleep(2);
     }
 }
 
-int main()
+int set_threshold_receive_thread()
 {
-    std::thread th(updating_values_thread);
-
-    srand(time(NULL));
-    char buffer[512];
-    int tmp;
-    std::string answerStr;
-    common::UDPServer server(SENSOR_PORT);
+    char buffer[17];
+    common::UDPServer server(SENSOR_PORT1);
     server.getSocket().setSendTimeout(2000);
-    int retval;
-    std::cout << "Sensor started\n";
+    std::string answerStr;
+    int retval, tmp;
     while(1)
     {
         try
         {
             memset(buffer, 0, sizeof(buffer));
-            retval = server.receive(buffer, 511);
+            retval = server.receive(buffer, 17);
             if(retval < 0)
             {
-                std::cout << "error receiving data\n";
-                return -1;
+                print("error receiving data");
+                continue;
             }
-            std::cout << "<-received" << buffer<<"\n";
+            print("<-received " + std::string(buffer) + " on port: " + std::to_string(SENSOR_PORT1));
 
             if(std::string(buffer).find("set_threshold") == 0)
             {
@@ -73,29 +109,20 @@ int main()
                 {
                     if(tmp < 100)
                     {
-                        std::cout << "setting new threshold to: "<<tmp<<"\n";
+                        print("setting new threshold to: " + std::to_string(tmp));
                         thres_hold = tmp;
-                        std::cout << "threshold setted to: "<<thres_hold<<"\n";
+                        print( "threshold setted to: " + std::to_string(thres_hold));
 
                         answerStr = "threshold: " + std::to_string(tmp);
                         if(server.send(answerStr.c_str(), retval) > 0)
-                            std::cout << "->sent answer {"<<answerStr<<"}\n";
+                            print("->sent answer {" + answerStr + "}");
+
                         else
-                            std::cout << "failed to sent answer\n";
+                            print("failed to sent answer");
                         continue;
                     }
                 }
-                std::cout << "value of threshold not valid: "<<tmp<<"\n";
-            }
-
-            else if(std::string(buffer).find("get_value") == 0)
-            {
-                std::cout << "server demanded value"<<"\n";
-                answerStr = "current_value: "+ std::to_string(current_value) +" typical_value:" + std::to_string(typical);
-                if(server.send(answerStr.c_str(), retval) > 0)
-                    std::cout << "->sent answer {"<<answerStr<<"}\n";
-                else
-                    std::cout << "failed to sent answer\n";
+                print("value of threshold not valid: " + std::to_string(tmp));
             }
 
         }
@@ -106,7 +133,51 @@ int main()
         }
 
     }
-    th.join();
-    return 0;
+}
+
+int main()
+{
+    std::thread th1(updating_values_thread);
+    std::thread th2(set_threshold_receive_thread);
+
+    srand(time(NULL));
+    char buffer[512];
+    std::string answerStr;
+    common::UDPServer server(SENSOR_PORT2);
+    server.getSocket().setSendTimeout(2000);
+    int retval;
+    print("Sensor started");
+    while(1)
+    {
+        try
+        {
+            memset(buffer, 0, sizeof(buffer));
+            retval = server.receive(buffer, 9);
+            if(retval < 0)
+            {
+                print("error receiving data");
+                continue;
+            }
+            print("<-received " + std::string(buffer) + " on port: " + std::to_string(SENSOR_PORT1));
+
+            if(std::string(buffer).find("get_value") == 0)
+            {
+                print("server demanded value");
+                answerStr = "current_value: "+ std::to_string(current_value) +" typical_value: " + std::to_string(typical);
+                if(server.send(answerStr.c_str(), retval) > 0)
+                    print("->sent answer {" + answerStr + "}");
+
+                else
+                    print("failed to sent answer");
+            }
+
+        }
+        catch(const std::exception &ex)
+        {
+            std::cerr << ex.what() << "\n";
+            return -1;
+        }
+
+    }
 }
 

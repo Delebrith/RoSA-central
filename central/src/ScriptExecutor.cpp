@@ -104,7 +104,7 @@ std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
         return "Sensor: " + command[1] + " current_value: " + std::to_string(state.current_value) +
                " typical_value: " + std::to_string(state.typical_value) +
                " threshold: " + std::to_string(state.threshold) +
-               "status: " + status;
+               " status: " + status;
     }
     catch (std::logic_error &error) {
         return error.what();
@@ -112,15 +112,13 @@ std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
 }
 
 std::string ScriptExecutor::ask_sensor(std::vector<std::string> &command) {
-    std::cout << "hey" << std::flush;
     try {
-        std::cout << "ask comm " << std::flush;
         communicator->ask_for_values(command[1]);
     }
     catch (std::logic_error &error) {
         return error.what();
     }
-    return "co je?";
+    return "";
 }
 
 /*

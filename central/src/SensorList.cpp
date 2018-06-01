@@ -1,5 +1,4 @@
 #include "SensorList.h"
-#include "iostream"
 
 void SensorList::add_sensor(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);

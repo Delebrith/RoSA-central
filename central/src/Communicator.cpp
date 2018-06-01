@@ -1,22 +1,21 @@
 #include "Communicator.h"
 
 
-
 void Communicator::add_sensor(std::string &address, float threshold) {
-    std::string translated_address = common::Address(address, "7000").hostToString();
+    std::string translated_address = common::Address(address, SensorPort).hostToString();
     sensorList->add_sensor(translated_address);
     this->set_threshold(address, threshold);
 }
 
 void Communicator::erase_sensor(std::string &address) {
-    std::string translated_address = common::Address(address, "7000").hostToString();
+    std::string translated_address = common::Address(address, SensorPort).hostToString();
     sensorList->erase_sensor(translated_address);
 }
 
 void Communicator::set_threshold(std::string &address, float new_threshold) {
     if (new_threshold < 0 || new_threshold > 100)
         throw std::invalid_argument("Can't add sensor: valid format of threshold");
-    common::Address server_address(address, "7000");
+    common::Address server_address(address, SensorPort);
     std::string translated_address = server_address.hostToString();
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
@@ -32,17 +31,16 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
     std::cout << "sent to: " << translated_address << std::endl;
     client.sendAndSaveCallback("set_threshold " + std::to_string(new_threshold), server_address,
                                std::unique_ptr<common::UDPClient::Callback>(new Callback_set_threshold(sensorList)));
+    sensorList->set_last_question(translated_address);
 }
 
 void Communicator::ask_for_values(std::string &address) {
-    std::cout << "1" << std::flush;
-    common::Address server_address(address, "7000");
+    common::Address server_address(address, SensorPort);
     std::string translated_address = server_address.hostToString();
-    std::cout << "2" << std::flush;
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
         if (std::difftime(std::time(nullptr), last_question) < 5) {
-            std::cout << "wrong time " << translated_address << std::endl << std::flush;;
+            std::cout << "wrong time " << translated_address << std::endl << std::flush;
             return;
         }
     }
@@ -51,13 +49,14 @@ void Communicator::ask_for_values(std::string &address) {
         throw std::invalid_argument("sensor with address" + translated_address + "doesn't exist");
     }
 
-    std::cout << "sent to: " << translated_address << std::endl;
+    std::cout << "sent to: " << translated_address << std::endl << std::flush;
     client.sendAndSaveCallback("get_value", server_address,
                                std::unique_ptr<common::UDPClient::Callback>(new Callback_get_value(sensorList)));
+    sensorList->set_last_question(translated_address);
 }
 
 SensorList::SensorState Communicator::get_sensor_state(std::string &address) {
-    std::string translated_address = common::Address(address, "7000").hostToString();
+    std::string translated_address = common::Address(address, SensorPort).hostToString();
     return sensorList->get_sensor_state(translated_address);
 }
 

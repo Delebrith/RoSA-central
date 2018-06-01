@@ -2,7 +2,7 @@
 
 void SensorList::add_sensor(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
-    sensors.emplace(address);
+    sensors.emplace(address, SensorInfo());
 }
 
 void SensorList::erase_sensor(std::string address) {

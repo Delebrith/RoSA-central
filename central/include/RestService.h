@@ -12,7 +12,7 @@
 #include "SensorList.h"
 #include "SessionList.h"
 
-
+/*
 using namespace web;
 using namespace http;
 using namespace utility;
@@ -43,7 +43,7 @@ private:
     SensorList* sensorList;
     SessionList sessionList;
 
-};
+};*/
 
 
 #endif //REST_RESTSERVICE_H

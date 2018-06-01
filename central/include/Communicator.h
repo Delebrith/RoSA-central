@@ -4,14 +4,14 @@
 #include <udp_client.h>
 #include <iostream>
 #include <cstring>
-#include "RestService.h"
 #include "SensorList.h"
 #include <boost/algorithm/string.hpp>
 
 
 class Communicator {
 public:
-    Communicator(common::UDPClient *client, SensorList *sensorList);
+    Communicator();
+    //Communicator(common::UDPClient *client, SensorList *sensorList);
 
     void add_sensor(std::string &address, float threshold);
 
@@ -50,6 +50,23 @@ private:
         SensorList *sensorList;
     };
 
+    class Callback : public common::UDPClient::Callback {
+    public:
+        Callback(const std::string str)
+                : name(str) {}
+
+        virtual void callbackOnReceive(const common::Address &address, std::string msg) {
+            static std::hash<const common::Address> hasher;
+            std::cout << name << " - received: '" << msg << "'\nfrom: ";
+            address.print(std::cout);
+            std::cout << "(address hash: " << hasher(address) << ")\n";
+            std::cout << std::endl;
+        }
+
+    private:
+        std::string name;
+    };
+
     class Callback_get_value : public common::UDPClient::Callback {
     public:
         Callback_get_value(SensorList *sensorList) : sensorList(sensorList) {}
@@ -74,8 +91,8 @@ private:
         SensorList *sensorList;
     };
 
-    common::UDPClient *client;
-    SensorList *sensorList;
+    common::UDPClient client;
+    SensorList sensorList;
 
     /*
     common::Address server_address1(common::AddressInfo(argv[1], argv[2], SOCK_DGRAM).getResult());

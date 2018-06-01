@@ -1,7 +1,6 @@
 #ifndef ROSA_CENTRAL_SENSORLIST_H
 #define ROSA_CENTRAL_SENSORLIST_H
 
-
 #include <mutex>
 #include <map>
 #include <vector>

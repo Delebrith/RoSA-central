@@ -1,5 +1,6 @@
 #include "address.h"
 #include "exception.h"
+#include  <arpa/inet.h>
 #include <cstring>
 #include <sstream>
 #ifndef NDEBUG
@@ -23,8 +24,11 @@ common::AddressInfo::AddressInfo(const char *host, const char *port, int socktyp
             throw ExceptionInfo("getaddrinfo failed with retval: " + std::string(gai_strerror(retval)));
     }
 #ifndef NDEBUG
-    std::cerr << "getaddrinfo result:\n";
-    forEach([](addrinfo *ai) { Address(ai).print(std::cerr); });
+    if(getResult()->ai_next)
+    {
+        std::cerr << "warning - many getaddrinfo results:\n";
+        forEach([](addrinfo *ai) { Address(ai).print(std::cerr); });
+    }
 #endif
 }
 
@@ -57,7 +61,7 @@ common::Address::Address(uint16_t port)
     std::memset(&address, 0, addressLength);
     address.sin6_family = AF_INET6;
     address.sin6_port = htons(port);
-    address.sin6_addr = in6addr_any;
+    address.sin6_addr = IN6ADDR_ANY_INIT;
 }
 
 common::Address::Address(const addrinfo *ai)
@@ -98,31 +102,7 @@ socklen_t* common::Address::getAddressLengthPointer()
     return &addressLength;
 }
 
-std::string common::Address::hostToString() const
-{
-    char address_str[INET6_ADDRSTRLEN];
-    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICSERV);
-    return std::string(address_str, INET6_ADDRSTRLEN);
-}
-
-std::string common::Address::portToString() const
-{
-    char port_str[6]; // max port number has 5 digits
-    getnameinfo(getAddress(), addressLength, 0, 0, port_str, 6, NI_NUMERICSERV);
-    return std::string(port_str, 6);
-}
-
-std::string common::Address::toString() const
-{
-    std::ostringstream oss;
-    char address_str[INET6_ADDRSTRLEN];
-    char port_str[6];
-    getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, port_str, 6, NI_NUMERICSERV);
-    oss << address_str << " :" << port_str;
-    return oss.str();
-}
-
-uint16_t common::Address::port() const
+uint16_t common::Address::getPort() const
 {
     if(getAddress()->sa_family == AF_INET6)
         return ntohs(address.sin6_port);
@@ -132,17 +112,30 @@ uint16_t common::Address::port() const
         throw Exception("Address family (" + std::to_string(getAddress()->sa_family) + ") does not match neither IPV6 nor IPV4");
 }
 
-void common::Address::incrementPort()
+std::string common::Address::hostToString() const
 {
-    if(getAddress()->sa_family == AF_INET6)
-        address.sin6_port = htons(ntohs(address.sin6_port) + 1);
-    else if(getAddress()->sa_family == AF_INET)
+    char address_str[INET6_ADDRSTRLEN];
+    int retval = getnameinfo(getAddress(), addressLength, address_str, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);
+    if(retval != 0)
     {
-        sockaddr_in *ipv4 = reinterpret_cast<sockaddr_in*>(&address);
-        ipv4->sin_port = htons(ntohs(ipv4->sin_port) + 1);
+        if(retval == EAI_SYSTEM)
+            throw ExceptionInfo("getnameinfo failed with errno: " + std::string(strerror(errno)));
+        else
+            throw ExceptionInfo("getnameinfo failed with retval: " + std::string(gai_strerror(retval)));
     }
-    else
-        throw Exception("Address family (" + std::to_string(getAddress()->sa_family) + ") does not match neither IPV6 nor IPV4");
+    if(strncmp(address_str, "::ffff:", 7) == 0)
+        return std::string(address_str + 7); // ugly, but it is the only way to return IPv4 string from IPv6-mapped IPv4 address
+    return std::string(address_str);
+}
+
+std::string common::Address::portToString() const
+{
+    return std::to_string(getPort());
+}
+
+std::string common::Address::toString() const
+{
+    return hostToString() + " :" + portToString();
 }
 
 void common::Address::print(std::ostream &os) const
@@ -167,4 +160,31 @@ bool common::Address::operator==(const common::Address &other) const
 bool common::Address::operator!=(const common::Address &other) const
 {
     return !(*this == other);
+}
+
+bool common::Address::isLoopback(uint16_t port) const
+{
+    if(getAddress()->sa_family == AF_INET6)
+    {
+        int memcmp_retval = std::memcmp(&address.sin6_addr, &in6addr_loopback, sizeof(in6_addr));
+        return ( memcmp_retval == 0 && ntohs(address.sin6_port) == port);
+    }
+    else
+    {
+        const sockaddr_in *ipv4 = reinterpret_cast<const sockaddr_in*>(&address);
+        return (ipv4->sin_addr.s_addr == INADDR_LOOPBACK && ntohs(ipv4->sin_port) == port);
+    }
+}
+
+void common::Address::incrementPort()
+{
+    if(getAddress()->sa_family == AF_INET6)
+        address.sin6_port = htons(ntohs(address.sin6_port) + 1);
+    else if(getAddress()->sa_family == AF_INET)
+    {
+        sockaddr_in *ipv4 = reinterpret_cast<sockaddr_in*>(&address);
+        ipv4->sin_port = htons(ntohs(ipv4->sin_port) + 1);
+    }
+    else
+        throw Exception("Address family (" + std::to_string(getAddress()->sa_family) + ") does not match neither IPV6 nor IPV4");
 }

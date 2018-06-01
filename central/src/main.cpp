@@ -4,6 +4,7 @@
 #include <cstring>
 #include "RestService.h"
 #include "ScriptExecutor.h"
+#include "Communicator.h"
 
 using namespace web;
 using namespace http;

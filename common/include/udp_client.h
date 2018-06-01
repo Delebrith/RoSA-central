@@ -24,8 +24,8 @@ public:
     // - port - port from which client is going to send (port at which client receives will also be reserved - port+1)
     // - input_buffer_size - used in private receive function, should be the size of longest possible packet, however
     //   it should not be greater than min UDP packet size that won't get divided (max 508 bytes?)
+    //   if input_buffer_size is 0, only function send should be used, because you will not receive any answer - callbacks are pointless
     // - default_callback - see comment above sendAndSaveCallback
-    // input_buffer_size MUST be at least 1
     UDPClient(uint16_t port, size_t input_buffer_size, std::unique_ptr<Callback> &&default_callback = nullptr);
 
     // note that receive_socket must be bound to port 1 greater than send_socket

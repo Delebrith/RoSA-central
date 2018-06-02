@@ -1,22 +1,42 @@
 #include "Communicator.h"
+#include "exception.h"
 
 
 void Communicator::add_sensor(std::string &address, float threshold) {
-    std::string translated_address = common::Address(address, SensorPort).hostToString();
+    std::string translated_address;
+    try {
+        translated_address = common::Address(address, SensorPort).hostToString();
+    }
+    catch (common::ExceptionInfo &) {
+        throw std::logic_error("Incorrect address format");
+    }
     sensorList->add_sensor(translated_address);
     this->set_threshold(address, threshold);
 }
 
 void Communicator::erase_sensor(std::string &address) {
-    std::string translated_address = common::Address(address, SensorPort).hostToString();
+    std::string translated_address;
+    try {
+        translated_address = common::Address(address, SensorPort).hostToString();
+    }
+    catch (common::ExceptionInfo &) {
+        throw std::logic_error("Incorrect address format");
+    }
     sensorList->erase_sensor(translated_address);
 }
 
 void Communicator::set_threshold(std::string &address, float new_threshold) {
     if (new_threshold < 0 || new_threshold > 100)
         throw std::invalid_argument("Can't add sensor: valid format of threshold");
-    common::Address server_address(address, SensorPort);
-    std::string translated_address = server_address.hostToString();
+    common::Address server_address;
+    std::string translated_address;
+    try {
+        server_address = common::Address(address, SensorPort);
+        translated_address = server_address.hostToString();
+    }
+    catch (common::ExceptionInfo &) {
+        throw std::logic_error("Incorrect address format");
+    }
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
         if (std::difftime(std::time(nullptr), last_question) < 5) {
@@ -35,8 +55,15 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
 }
 
 void Communicator::ask_for_values(std::string &address) {
-    common::Address server_address(address, SensorPort);
-    std::string translated_address = server_address.hostToString();
+    common::Address server_address;
+    std::string translated_address;
+    try {
+        server_address = common::Address(address, SensorPort);
+        translated_address = server_address.hostToString();
+    }
+    catch (common::ExceptionInfo &) {
+        throw std::logic_error("Incorrect address format");
+    }
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
         if (std::difftime(std::time(nullptr), last_question) < 5) {
@@ -56,7 +83,13 @@ void Communicator::ask_for_values(std::string &address) {
 }
 
 SensorList::SensorState Communicator::get_sensor_state(std::string &address) {
-    std::string translated_address = common::Address(address, SensorPort).hostToString();
+    std::string translated_address;
+    try {
+        translated_address = common::Address(address, SensorPort).hostToString();
+    }
+    catch (common::ExceptionInfo &) {
+        throw std::logic_error("Incorrect address format");
+    }
     return sensorList->get_sensor_state(translated_address);
 }
 
@@ -64,6 +97,6 @@ std::vector<std::pair<std::string, SensorList::SensorState>> Communicator::get_s
     return sensorList->get_sensors();
 }
 
-Communicator::Communicator(SensorList *sensorList) : sensorList(sensorList), client(6000, 512, std::move(std::unique_ptr
+Communicator::Communicator(SensorList *sensorList) : sensorList(sensorList), client(7501, 512, std::move(std::unique_ptr
                                                                                                                  <common::UDPClient::Callback>(
         new Callback("default_callback")))) {}

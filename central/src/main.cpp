@@ -66,13 +66,18 @@ private:
 
 void executeScripts(Communicator *communicator) {
     ScriptExecutor executor(communicator);
-    executor.execute();
+    try {
+        executor.execute();
+    }
+    catch (std::logic_error) {
+        std::cout << "Problem with creating pipe to listen scripts" << std::endl;
+    }
 }
 
 void server() {
     try {
         char buffer[512];
-        common::UDPServer server(6000);
+        common::UDPServer server(7500);
         server.getSocket().setSendTimeout(2000);
         std::cout << "UDP server started\n";
         while (true) {

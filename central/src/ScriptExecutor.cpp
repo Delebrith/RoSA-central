@@ -1,4 +1,5 @@
 #include "ScriptExecutor.h"
+#include "exception.h"
 
 #define FIFO_IN "../../central_in"
 #define FIFO_OUT "../../central_out"
@@ -60,6 +61,9 @@ std::string ScriptExecutor::add_sensor(std::vector<std::string> &command) {
     try {
         communicator->add_sensor(command[1], threshold);
     }
+    catch (common::ExceptionInfo &error) {
+        return "incorrect address format";
+    }
     catch (std::logic_error &error) {
         return error.what();
     }
@@ -69,6 +73,9 @@ std::string ScriptExecutor::add_sensor(std::vector<std::string> &command) {
 std::string ScriptExecutor::erase_sensor(std::vector<std::string> &command) {
     try {
         communicator->erase_sensor(command[1]);
+    }
+    catch (common::ExceptionInfo &error) {
+        return "incorrect address format";
     }
     catch (std::logic_error &error) {
         return error.what();
@@ -86,6 +93,9 @@ std::string ScriptExecutor::set_threshold(std::vector<std::string> &command) {
     }
     try {
         communicator->set_threshold(command[1], threshold);
+    }
+    catch (common::ExceptionInfo &error) {
+        return "incorrect address format";
     }
     catch (std::logic_error &error) {
         return error.what();
@@ -106,6 +116,9 @@ std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
                " threshold: " + std::to_string(state.threshold) +
                " status: " + status;
     }
+    catch (common::ExceptionInfo &error) {
+        return "incorrect address format";
+    }
     catch (std::logic_error &error) {
         return error.what();
     }
@@ -114,6 +127,9 @@ std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
 std::string ScriptExecutor::ask_sensor(std::vector<std::string> &command) {
     try {
         communicator->ask_for_values(command[1]);
+    }
+    catch (common::ExceptionInfo &error) {
+        return "incorrect address format";
     }
     catch (std::logic_error &error) {
         return error.what();

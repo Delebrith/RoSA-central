@@ -5,7 +5,7 @@
 void Communicator::add_sensor(std::string &address, float threshold) {
     std::string translated_address;
     try {
-        translated_address = common::Address(address, SensorPort).hostToString();
+        translated_address = common::Address(address, SensorPort1).hostToString();
     }
     catch (common::ExceptionInfo &) {
         throw std::logic_error("Incorrect address format");
@@ -17,7 +17,7 @@ void Communicator::add_sensor(std::string &address, float threshold) {
 void Communicator::erase_sensor(std::string &address) {
     std::string translated_address;
     try {
-        translated_address = common::Address(address, SensorPort).hostToString();
+        translated_address = common::Address(address, SensorPort1).hostToString();
     }
     catch (common::ExceptionInfo &) {
         throw std::logic_error("Incorrect address format");
@@ -31,7 +31,7 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
     common::Address server_address;
     std::string translated_address;
     try {
-        server_address = common::Address(address, SensorPort);
+        server_address = common::Address(address, SensorPort1);
         translated_address = server_address.hostToString();
     }
     catch (common::ExceptionInfo &) {
@@ -58,7 +58,7 @@ void Communicator::ask_for_values(std::string &address) {
     common::Address server_address;
     std::string translated_address;
     try {
-        server_address = common::Address(address, SensorPort);
+        server_address = common::Address(address, SensorPort2);
         translated_address = server_address.hostToString();
     }
     catch (common::ExceptionInfo &) {
@@ -85,7 +85,7 @@ void Communicator::ask_for_values(std::string &address) {
 SensorList::SensorState Communicator::get_sensor_state(std::string &address) {
     std::string translated_address;
     try {
-        translated_address = common::Address(address, SensorPort).hostToString();
+        translated_address = common::Address(address, SensorPort1).hostToString();
     }
     catch (common::ExceptionInfo &) {
         throw std::logic_error("Incorrect address format");

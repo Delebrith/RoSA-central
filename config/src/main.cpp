@@ -13,7 +13,7 @@ void help(const char *program_name) {
                                                 "Available commands:\n\n"
                                                 "- add_sensor [sensor_address] [threshold] \n"
                                                 "- remove_sensor [sensor_address] \n"
-                                                "- set_threshold [sensor_address] \n"
+                                                "- set_threshold [sensor_address] [threshold]\n"
                                                 "- get_sensor [sensor_address] \n"
                                                 "- ask_sensor [sensor_address] \n"
                                                 "- exit \n";

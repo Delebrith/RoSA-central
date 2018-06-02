@@ -25,7 +25,8 @@ public:
     std::vector<std::pair<std::string, SensorList::SensorState>> get_sensor_list();
 
 private:
-    const std::string SensorPort = "7000";
+    const std::string SensorPort1 = "7000";
+    const std::string SensorPort2 = "7001";
     class Callback_set_threshold : public common::UDPClient::Callback {
     public:
         Callback_set_threshold(SensorList *sensorList) : sensorList(sensorList) {}

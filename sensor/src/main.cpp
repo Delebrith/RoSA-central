@@ -200,7 +200,7 @@ int main()
             {
                 print("server demanded value");
                 answerStr = "current_value: "+ std::to_string(current_value) +" typical_value: " + std::to_string(typical);
-                if(server.send(answerStr.c_str(), retval) > 0)
+                if (server.send(answerStr.c_str(), answerStr.size()) > 0)
                     print("->sent answer {" + answerStr + "}");
 
                 else

@@ -1,46 +1,18 @@
 #include <udp_client.h>
 #include <iostream>
 #include <cstring>
-#include "RestService.h"
+#include "SessionList.h"
 #include "SensorList.h"
+#include "WebServer.h"
 
-using namespace web;
-using namespace http;
-using namespace utility;
-using namespace http::experimental::listener;
+using namespace std;
 
-std::unique_ptr<RestService, std::default_delete<RestService>> rest;
-SensorList sensorlist;
+using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
-void on_initialize(const string_t& address)
-{
-    // Build our listener's URI from the configured address and the hard-coded path "MyServer/Action"
+SensorList sensorList;
+SessionList sessionList;
+HttpServer server;
 
-    uri_builder sensorUri(address);
-    sensorUri.append_path(U(RestService::base_uri));
-
-    auto addr = sensorUri.to_uri().to_string();
-    rest = std::unique_ptr<RestService>(new RestService(addr, &sensorlist));
-    rest->open().wait();
-
-    ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
-
-    return;
-}
-
-void activate_rest_service(const utility::string_t host)
-{
-    utility::string_t port = U(":8081");
-    utility::string_t address = U(U("http://") + host);
-    address.append(port);
-    on_initialize(address);
-}
-
-void close_rest_service()
-{
-    rest->close().wait();
-    return;
-}
 
 class Callback : public common::UDPClient::Callback
 {
@@ -87,16 +59,28 @@ void test_udp_client(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+
+    WebServer webServer(&sessionList, &sensorList, &server);
+    std::cout << "web server created...\n";
+
+    thread server_thread([&server]() {
+        // Start server
+        server.start();
+    });
+
+    std::cout << "web server started...\n";
+
+
     try
     {
-        activate_rest_service(U("localhost"));
+//        activate_rest_service(U("localhost"));
         test_udp_client(argc, argv);
         std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {
             continue;
         }
-        close_rest_service();
+//        close_rest_service();
         exit(0);
     }
     catch(const std::exception &ex)

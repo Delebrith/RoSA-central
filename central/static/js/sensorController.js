@@ -20,7 +20,7 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
 
     function succesfulGetSensor(response)
     {
-        $scope.sensorArray = response.data.response;
+        $scope.sensorArray = response.data;
         console.log($scope.sensorArray);
     }
 

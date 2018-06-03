@@ -1,5 +1,5 @@
 //
-// Created by delebrith on 27.05.18.
+// Created by p.szwed
 //
 
 #include <random>
@@ -29,7 +29,7 @@ bool SessionList::exists_session(std::string session_id)
         i = sessions.find(session_id);
     }
     if(i == sessions.end())
-        return false;
+        throw std::invalid_argument("Session does nnot exist!");
     return true;
 }
 

@@ -1,6 +1,10 @@
 #include <udp_client.h>
+#include <udp_server.h>
 #include <iostream>
 #include <cstring>
+#include "ScriptExecutor.h"
+#include "Communicator.h"
+
 #include "SessionList.h"
 #include "SensorList.h"
 #include "WebServer.h"
@@ -18,11 +22,9 @@ class Callback : public common::UDPClient::Callback
 {
 public:
     Callback(const std::string str)
-        : name(str)
-    {}
+            : name(str) {}
 
-    virtual void callbackOnReceive(const common::Address &address, std::string msg)
-    {
+    virtual void callbackOnReceive(const common::Address &address, std::string msg) {
         static std::hash<const common::Address> hasher;
         std::cout << name << " - received: '" << msg << "'\nfrom: ";
         address.print(std::cout);
@@ -34,28 +36,47 @@ private:
     std::string name;
 };
 
-void test_udp_client(int argc, char **argv)
-{
-    std::cout << "\nTesting UDPClient...\n";
-    if(argc != 4)
-    {
-        std::cout << "Usage: " << argv[0] << " <host> <port1> <port2>\n";
+void executeScripts(Communicator *communicator) {
+    ScriptExecutor executor(communicator);
+    try {
+        executor.execute();
+    }
+    catch (std::logic_error) {
+        std::cout << "Problem with creating pipe to listen scripts" << std::endl;
+    }
+}
+
+void server() {
+    try {
+        char buffer[512];
+        common::UDPServer server(7500);
+        server.getSocket().setSendTimeout(2000);
+        std::cout << "UDP server started\n";
+        while (true) {
+            int retval = server.receive(buffer, 511);
+            if (retval < 0) {
+                std::cout << "error, no data received\n";
+                return;
+            }
+
+            //Todo: rozpisać wpisywanie do listy
+
+
+            std::cout << "Received: " << buffer << "\n";
+            if (server.send(buffer, retval) > 0)
+                std::cout << "Sent answer\n";
+            else
+                std::cout << "Failed to send answer\n";
+            memset(buffer, 0, sizeof(buffer));
+        }
+    }
+    catch (const std::exception &ex) {
+        std::cerr << ex.what() << "\n";
         return;
     }
-    common::Address server_address1(argv[1], argv[2]);
-    common::Address server_address2(argv[1], argv[3]);
-
-    std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
-    static common::UDPClient client(6000, 512, std::move(default_callback));
-    std::cout << "UDP client started\n";
-    auto send_message_thread = [&](const common::Address &addr, const std::string msg) {
-        client.sendAndSaveCallback(msg, addr, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback(" + msg + ")")));
-    };
-    std::thread thread1(send_message_thread, std::ref(server_address1), "hello1");
-    std::thread thread2(send_message_thread, std::ref(server_address2), "hello2");
-    thread1.join();
-    thread2.join();
 }
+
+
 
 int main(int argc, char **argv)
 {
@@ -73,13 +94,15 @@ int main(int argc, char **argv)
 
     try
     {
-        test_udp_client(argc, argv);
+        Communicator communicator(&sensorList);
+        executeScripts(&communicator);
         std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {
             continue;
         }
         exit(0);
+
     }
     catch(const std::exception &ex)
     {

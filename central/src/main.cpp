@@ -73,14 +73,12 @@ int main(int argc, char **argv)
 
     try
     {
-//        activate_rest_service(U("localhost"));
         test_udp_client(argc, argv);
         std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {
             continue;
         }
-//        close_rest_service();
         exit(0);
     }
     catch(const std::exception &ex)

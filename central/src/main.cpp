@@ -15,7 +15,7 @@ using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 SensorList sensorList;
 SessionList sessionList;
-HttpServer server;
+HttpServer httpServer;
 
 
 class Callback : public common::UDPClient::Callback
@@ -81,21 +81,23 @@ void server() {
 int main(int argc, char **argv)
 {
 
-    WebServer webServer(&sessionList, &sensorList, &server);
-    std::cout << "web server created...\n";
-
-    thread server_thread([&server]() {
-        // Start server
-        server.start();
-    });
-
-    std::cout << "web server started...\n";
-
 
     try
     {
         Communicator communicator(&sensorList);
+
+        WebServer webServer(&sessionList, &communicator, &httpServer);
+        std::cout << "web server created...\n";
+
+        thread server_thread([]() {
+            // Start server
+            httpServer.start();
+        });
+
+        std::cout << "web server started...\n";
+
         executeScripts(&communicator);
+
         std::cout << "press enter to exit...\n";
         while (std::cin.get() != '\n')
         {

@@ -7,7 +7,7 @@
 
 
 #include "SessionList.h"
-#include "SensorList.h"
+#include "Communicator.h"
 #include "server_http.hpp"
 #include "status_code.hpp"
 #include "utility.hpp"
@@ -17,12 +17,9 @@ using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 class WebServer
 {
-    SessionList* sessionList;
-    SensorList* sensorList;
-    HttpServer* httpServer;
 public:
 
-    WebServer(SessionList* sessionList, SensorList* sensorList, HttpServer* server);
+    WebServer(SessionList* sessionList, Communicator* communicator, HttpServer* server);
 
 
     static void validateSession(std::shared_ptr<HttpServer::Request> request, SessionList* sessionList);

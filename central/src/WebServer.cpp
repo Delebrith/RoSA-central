@@ -17,6 +17,7 @@
 
 #include "WebServer.h"
 #include "Sensor.h"
+#include "Communicator.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -24,11 +25,18 @@ using namespace boost::property_tree;
 void WebServer::validateSession(std::shared_ptr<HttpServer::Request> request, SessionList* sessionList)
 {
     std::stringstream cookieHeader;
-    cookieHeader << request->header.find("Cookie")->second;
+    SimpleWeb::CaseInsensitiveMultimap::iterator header = request->header.find("Cookie");
+    if (header == request->header.end())
+        throw std::invalid_argument("No session cookie!");
+    WebServer::log("0");
+    cookieHeader << header->second;
+    WebServer::log("1");
     std::string cookieHeaderString;
+    WebServer::log("2");
     cookieHeader >> cookieHeaderString;
 
     SimpleWeb::CaseInsensitiveMultimap cookie = SimpleWeb::HttpHeader::FieldValue::SemicolonSeparatedAttributes::parse(cookieHeaderString);
+    WebServer::log("3");
     const std::string sessionIdCookieString(cookie.find("sessionId")->second);
 
     bool exists = sessionList->exists_session(sessionIdCookieString);
@@ -55,7 +63,7 @@ void WebServer::log(std::string message)
     std::cout << "[" << getTimestamp() << "] : " << message << std::endl;
 }
 
-WebServer::WebServer(SessionList* sessionList, SensorList* sensorList, HttpServer* server)
+WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpServer* server)
 {
 
     // HTTP-server at port 8080 using 1 thread
@@ -121,12 +129,12 @@ WebServer::WebServer(SessionList* sessionList, SensorList* sensorList, HttpServe
         }
     };
 
-    server->resource["^/RoSA/sensor$"]["GET"] = [sensorList, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
+    server->resource["^/RoSA/sensor$"]["GET"] = [communicator, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
 
         try {
             WebServer::validateSession(request, sessionList);
             std::string responseBody = "[";
-            std::vector<std::pair<std::string, SensorList::SensorState>> sensors = sensorList->get_sensors();
+            std::vector<std::pair<std::string, SensorList::SensorState>> sensors = communicator->get_sensor_list();
             for (unsigned i = 0; i < sensors.size(); i++)
             {
                 responseBody += Sensor(sensors[i].first, sensors[i].second).toJSONString();
@@ -151,65 +159,78 @@ WebServer::WebServer(SessionList* sessionList, SensorList* sensorList, HttpServe
     };
 
 
-    server->resource["^/RoSA/sensor/add$"]["POST"] = [sensorList, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
-        stringstream stream;
-        std::unordered_map<std::string, std::string> query;
-        auto query_fields = request->parse_query_string();
-        for(auto &field : query_fields)
-            query.emplace(field.first, field.second);
+    server->resource["^/RoSA/sensor/add$"]["POST"] = [communicator, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
 
         try {
-            sensorList->add_sensor(query.at("address"), stof(query.at("threshold")));
+            WebServer::validateSession(request, sessionList);
+        } catch (std::exception e) {
+
+            response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
+        }
+
+        try {
+            stringstream stream;
+            std::unordered_map<std::string, std::string> query;
+            auto query_fields = request->parse_query_string();
+            for(auto &field : query_fields)
+                query.emplace(field.first, field.second);
+            communicator->add_sensor(query.at("address"), stof(query.at("threshold")));
+            response->write(SimpleWeb::StatusCode::success_created, "");
+            WebServer::log("Sensor added - " + query.at("address") + " with threshold: " + query.at("threshold"));
         } catch (std::exception e) {
 
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
-
-        response->write(SimpleWeb::StatusCode::success_created, "");
-
-        WebServer::log("Sensor added - " + query.at("address") + " with threshold: " + query.at("threshold"));
-
     };
 
-    server->resource["^/RoSA/sensor/modify$"]["POST"] = [sensorList, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
-        stringstream stream;
-        std::unordered_map<std::string, std::string> query;
-        auto query_fields = request->parse_query_string();
-        for(auto &field : query_fields)
-            query.emplace(field.first, field.second);
+    server->resource["^/RoSA/sensor/modify$"]["POST"] = [communicator, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
 
         try {
-            sensorList->set_threshold(query.at("address"), stof(query.at("threshold")));
+            WebServer::validateSession(request, sessionList);
+        } catch (std::exception e) {
+
+            response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
+        }
+
+        try {
+            stringstream stream;
+            std::unordered_map<std::string, std::string> query;
+            auto query_fields = request->parse_query_string();
+            for(auto &field : query_fields)
+                query.emplace(field.first, field.second);
+            communicator->set_threshold(query.at("address"), stof(query.at("threshold")));
+            response->write(SimpleWeb::StatusCode::success_created);
+            WebServer::log("Sensor modified - " + query.at("address") + " with threshold: " + query.at("threshold"));
         } catch (std::exception e) {
 
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
-
-        response->write(SimpleWeb::StatusCode::success_created);
-
-        WebServer::log("Sensor modified - " + query.at("address") + " with threshold: " + query.at("threshold"));
-
     };
 
 
-    server->resource["^/RoSA/sensor$"]["DELETE"] = [sensorList, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
-        stringstream stream;
-        std::unordered_map<std::string, std::string> query;
-        auto query_fields = request->parse_query_string();
-        for(auto &field : query_fields)
-            query.emplace(field.first, field.second);
+    server->resource["^/RoSA/sensor$"]["DELETE"] = [communicator, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
 
         try {
-            sensorList->erase_sensor(query.at("address"));
+            WebServer::validateSession(request, sessionList);
+        } catch (std::exception e) {
+
+            response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
+        }
+
+        try {
+            stringstream stream;
+            std::unordered_map<std::string, std::string> query;
+            auto query_fields = request->parse_query_string();
+            for(auto &field : query_fields)
+                query.emplace(field.first, field.second);
+            communicator->erase_sensor(query.at("address"));
+            response->write(SimpleWeb::StatusCode::success_created);
+            WebServer::log("Sensor erased - " + query.at("address"));
+
         } catch (std::exception e) {
 
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
-
-        response->write(SimpleWeb::StatusCode::success_created);
-
-        WebServer::log("Sensor erased - " + query.at("address"));
-
     };
 
 
@@ -259,8 +280,5 @@ WebServer::WebServer(SessionList* sessionList, SensorList* sensorList, HttpServe
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
-
-
-    this->httpServer = server;
 
 }

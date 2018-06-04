@@ -11,6 +11,7 @@ app.controller('logoutController', function($scope, $http, $cookies) {
                 alert("Wylogowano!");
             },
             function (response) {
+                sessionStorage.clear();
                 alert("Błąd w czasie wylogowania!");
             });
 	}

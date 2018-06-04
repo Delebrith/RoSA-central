@@ -22,6 +22,7 @@ struct Sensor {
     std::string status;
 
     json::value toJSON();
+    std::string toJSONString();
 };
 
 #endif //ROSA_CENTRAL_SENSOR_H

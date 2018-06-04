@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 2.9)
 set(CMAKE_CXX_STANDARD 11)
 project(rosa_central)
 
-find_package(Boost 1.55.0 REQUIRED COMPONENTS system)
+find_package(Boost 1.55.0 REQUIRED COMPONENTS system thread)
 link_directories(${CMAKE_SOURCE_DIR} ${Boost_LIBRARY_DIRS})
-set(Casablanca_LIBRARIES "-lboost_system -lcrypto -lssl -lcpprest -lpthread")
+set(Casablanca_LIBRARIES "-lboost_system -lboost_filesystem -lcrypto -lssl -lcpprest -lpthread")
 
 FILE(GLOB_RECURSE SOURCES "src/*")
 FILE(GLOB_RECURSE HEADERS "include/*")

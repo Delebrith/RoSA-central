@@ -2,49 +2,21 @@
 #include <udp_server.h>
 #include <iostream>
 #include <cstring>
-#include "RestService.h"
 #include "ScriptExecutor.h"
 #include "Communicator.h"
 
-using namespace web;
-using namespace http;
-using namespace utility;
-using namespace http::experimental::listener;
+#include "SessionList.h"
+#include "SensorList.h"
+#include "WebServer.h"
 
+using namespace std;
+
+using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
 SensorList sensorList;
-/*
-std::unique_ptr<RestService, std::default_delete<RestService>> rest;
+SessionList sessionList;
+HttpServer httpServer;
 
-void on_initialize(const string_t& address)
-{
-    // Build our listener's URI from the configured address and the hard-coded path "MyServer/Action"
-
-    uri_builder sensorUri(address);
-    sensorUri.append_path(U(RestService::base_uri));
-
-    auto addr = sensorUri.to_uri().to_string();
-    rest = std::unique_ptr<RestService>(new RestService(addr, &sensorlist));
-    rest->open().wait();
-
-    ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
-
-    return;
-}
-
-void activate_rest_service(const utility::string_t host)
-{
-    utility::string_t port = U(":8081");
-    utility::string_t address = U(U("http://") + host);
-    address.append(port);
-    on_initialize(address);
-}
-
-void close_rest_service()
-{
-    rest->close().wait();
-    return;
-}*/
 
 class Callback : public common::UDPClient::Callback
 {
@@ -108,12 +80,31 @@ void server() {
 
 int main(int argc, char **argv)
 {
+
+
     try
     {
-        //activate_rest_service(U(argv[1]));
         Communicator communicator(&sensorList);
+
+        WebServer webServer(&sessionList, &communicator, &httpServer);
+        std::cout << "web server created...\n";
+
+        thread server_thread([]() {
+            // Start server
+            httpServer.start();
+        });
+
+        std::cout << "web server started...\n";
+
         executeScripts(&communicator);
-        //close_rest_service();
+
+        std::cout << "press enter to exit...\n";
+        while (std::cin.get() != '\n')
+        {
+            continue;
+        }
+        exit(0);
+
     }
     catch(const std::exception &ex)
     {

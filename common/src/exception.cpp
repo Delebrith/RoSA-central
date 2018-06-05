@@ -2,6 +2,7 @@
 
 #include "exception.h"
 #include <iostream>
+#include "terminal_lock.h"
 
 common::Exception::Exception(const std::string &message)
     : msg(message + "\n")
@@ -18,5 +19,5 @@ common::ExceptionInfo::ExceptionInfo(const std::string &message)
 
 void common::ExceptionInfo::warning(const std::string &message)
 {
-    std::cerr << "warning: " << message << "\n";
+    TerminalLock(), std::cerr << "warning: " << message << "\n";
 }

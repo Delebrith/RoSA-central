@@ -8,6 +8,7 @@
 #include "SessionList.h"
 #include "SensorList.h"
 #include "WebServer.h"
+#include "exception.h"
 
 using namespace std;
 
@@ -16,25 +17,6 @@ using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 SensorList sensorList;
 SessionList sessionList;
 HttpServer httpServer;
-
-
-class Callback : public common::UDPClient::Callback
-{
-public:
-    Callback(const std::string str)
-            : name(str) {}
-
-    virtual void callbackOnReceive(const common::Address &address, std::string msg) {
-        static std::hash<const common::Address> hasher;
-        std::cout << name << " - received: '" << msg << "'\nfrom: ";
-        address.print(std::cout);
-        std::cout << "(address hash: " << hasher(address) << ")\n";
-        std::cout << std::endl;
-    }
-
-private:
-    std::string name;
-};
 
 void executeScripts(Communicator *communicator) {
     ScriptExecutor executor(communicator);
@@ -59,10 +41,41 @@ void server() {
                 return;
             }
 
-            //Todo: rozpisać wpisywanie do listy
+            //ending message
+            if (buffer[0] == -1 && server.getClientAddress().isLoopback(7501)) {
+                std::cout << "server ending work\n";
+                return;
+            }
 
+            //alarm
+            std::string msg(buffer);
+            std::string address;
+            std::vector<std::string> message;
+            boost::split(message, msg, [](char c) { return c == ' '; });
+            try {
+                address = server.getClientAddress().hostToString();
+                std::cout << "Received from " << address << ": " << msg << std::endl;
+                if (message.size() == 5 && message[0] == "alarm") {
 
-            std::cout << "Received: " << buffer << "\n";
+                    if (message[1] == "current_value:" && message[3] == "typical_value:") {
+                        float new_current_value, new_typical_value;
+                        new_current_value = std::stof(message[2]);
+                        new_typical_value = std::stof(message[4]);
+                        sensorList.set_values(address, new_current_value, new_typical_value);
+                    } else {
+                        std::cout << "Bad message from " << address << ": " << msg << std::endl;
+                        std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                    }
+
+                } else {
+                    std::cout << "Bad message from " << address << ": " << msg << std::endl;
+                    std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                }
+            }
+            catch (common::ExceptionInfo &) {
+                std::cout << "Problem with translating address of alarm sender" << std::endl;
+            }
+
             if (server.send(buffer, retval) > 0)
                 std::cout << "Sent answer\n";
             else
@@ -81,7 +94,6 @@ void server() {
 int main(int argc, char **argv)
 {
 
-
     try
     {
         Communicator communicator(&sensorList);
@@ -89,22 +101,19 @@ int main(int argc, char **argv)
         WebServer webServer(&sessionList, &communicator, &httpServer);
         std::cout << "web server created...\n";
 
-        thread server_thread([]() {
+        thread http_server_thread([]() {
             // Start server
             httpServer.start();
         });
+        thread alarm_server_thread(server);
 
         std::cout << "web server started...\n";
 
         executeScripts(&communicator);
-
-        std::cout << "press enter to exit...\n";
-        while (std::cin.get() != '\n')
-        {
-            continue;
-        }
-        exit(0);
-
+        communicator.send_server_terminating_msg();
+        httpServer.stop();
+        alarm_server_thread.join();
+        http_server_thread.join();
     }
     catch(const std::exception &ex)
     {

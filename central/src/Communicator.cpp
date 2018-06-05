@@ -10,6 +10,8 @@ void Communicator::add_sensor(std::string &address, float threshold) {
     catch (common::ExceptionInfo &) {
         throw std::logic_error("Incorrect address format");
     }
+    if (threshold < 0 || threshold > 100)
+        throw std::invalid_argument("Can't add sensor: valid format of threshold");
     sensorList->add_sensor(translated_address);
     this->set_threshold(address, threshold);
 }
@@ -100,3 +102,11 @@ std::vector<std::pair<std::string, SensorList::SensorState>> Communicator::get_s
 Communicator::Communicator(SensorList *sensorList) : sensorList(sensorList), client(7501, 512, std::move(std::unique_ptr
                                                                                                                  <common::UDPClient::Callback>(
         new Callback("default_callback")))) {}
+
+void Communicator::send_server_terminating_msg() {
+    char magic = -1;
+    if (client.send(&magic, 1, common::Address("localhost", 7500)) < 0) {
+        common::ExceptionInfo::warning(
+                "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
+    }
+}

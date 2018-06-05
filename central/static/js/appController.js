@@ -20,15 +20,9 @@ app.config(["$httpProvider", function ($httpProvider) {
 }]);
 
 var sc;
-var browsr;
-var cookies;
-var cstore;
 
 app.controller("appController", function($scope, $http, $cookieStore, $cookies, $browser, $location) {
-    browsr = $browser;
     sc = $scope;
-    cstore = $cookieStore;
-	cookies = $cookies;
     $scope.context = {
 			user: undefined
 	}

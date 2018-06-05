@@ -27,16 +27,6 @@ Sensor::Sensor(std::string address, SensorList::SensorState state)
     }
 }
 
-json::value Sensor::toJSON()
-{
-    json::value json;
-    json[U("address")] = json::value::string(address);
-    json[U("currentValue")] = json::value::number(current_value);
-    json[U("typicalValue")] = json::value::number(typical_value);
-    json[U("threshold")] = json::value::number(threshold);
-    json[U("status")] = json::value::string(status);
-    return json;
-}
 
 std::string Sensor::toJSONString()
 {

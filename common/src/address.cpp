@@ -5,6 +5,7 @@
 #include <sstream>
 #ifndef NDEBUG
 #include <iostream>
+#include "terminal_lock.h"
 #endif
 
 common::AddressInfo::AddressInfo(const char *host, const char *port, int socktype)
@@ -26,6 +27,7 @@ common::AddressInfo::AddressInfo(const char *host, const char *port, int socktyp
 #ifndef NDEBUG
     if(getResult()->ai_next)
     {
+        TerminalLock lock;
         std::cerr << "warning - many getaddrinfo results:\n";
         forEach([](addrinfo *ai) { Address(ai).print(std::cerr); });
     }

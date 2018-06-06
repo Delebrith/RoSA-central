@@ -16,18 +16,27 @@ app.factory("CORSInterceptor", [
 ]);
 
 app.config(["$httpProvider", function ($httpProvider) {
-    $httpProvider.interceptors.push("CORSInterceptor");
+    // $httpProvider.interceptors.push("CORSInterceptor");
 }]);
 
-app.controller("appController", function($scope, $http, $cookies, $location) {
-	$scope.context = {
+var sc;
+var browsr;
+var cookies;
+var cstore;
+
+app.controller("appController", function($scope, $http, $cookieStore, $cookies, $browser, $location) {
+    browsr = $browser;
+    sc = $scope;
+    cstore = $cookieStore;
+	cookies = $cookies;
+    $scope.context = {
 			user: undefined
 	}
 
 	$scope.isLogged = function () {
-		return $cookies.get("session_id") != null
+		return sessionStorage.getItem("username") != undefined;
 	}
 
-	$scope.serverAddress = "http://" + self.location.hostname + ":8081";
+	$scope.serverAddress = "http://" + self.location.hostname + ":8080";
 
 });

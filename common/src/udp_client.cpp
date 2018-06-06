@@ -13,10 +13,8 @@
 
 common::UDPClient::UDPClient(uint16_t port, size_t input_buffer_size, std::unique_ptr<Callback> &&default_callback)
     : sendSocket(port), receiveSocket(port + 1), inputBuffer(input_buffer_size, 0), defaultCallback(std::move(default_callback)),
-      receiverThread(&common::UDPClient::receiverThreadFunction, std::ref(*this))
-{
-    if(input_buffer_size == 0)
-    {
+      receiverThread(&common::UDPClient::receiverThreadFunction, std::ref(*this)) {
+    if (input_buffer_size == 0) {
         ExceptionInfo::warning("initialized UDPClient without buffer - you will never receive answer to what you send");
         receiverThread.join();
 #ifndef NDEBUG
@@ -29,15 +27,14 @@ common::UDPClient::UDPClient(common::UDPsocket &send_socket, common::UDPsocket &
     : sendSocket(send_socket), receiveSocket(receive_socket), inputBuffer(input_buffer_size, 0), defaultCallback(std::move(default_callback)),
       receiverThread(&common::UDPClient::receiverThreadFunction, std::ref(*this))
 {
-    if(input_buffer_size == 0)
-    {
+    if (input_buffer_size == 0) {
         ExceptionInfo::warning("initialized UDPClient without buffer - you will never receive answer to what you send");
         receiverThread.join();
 #ifndef NDEBUG
         TerminalLock(), std::cerr << "receiverThread joined\n";
 #endif
     }
-    if(receiveSocket.getAddress().getPort() - sendSocket.getAddress().getPort() != 1)
+    if (receiveSocket.getAddress().getPort() - sendSocket.getAddress().getPort() != 1)
         throw Exception("receiveSocket in UDPClient must be bound at port 1 greater than sendSocket");
 }
 
@@ -48,10 +45,11 @@ common::UDPClient::~UDPClient()
 #ifndef NDEBUG
     TerminalLock(), std::cerr << "UDPClient destructor... ";
 #endif
-    if(inputBuffer.size() != 0) // if it is equal 0, receiver thread does nothing and was already joined in constructor
+    if (inputBuffer.size() != 0) // if it is equal 0, receiver thread does nothing and was already joined in constructor
     {
-        if(send(&magic, 1, receiveSocket.getAddress()) < 0)
-            ExceptionInfo::warning("CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
+        if (send(&magic, 1, receiveSocket.getAddress()) < 0)
+            ExceptionInfo::warning(
+                    "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
         receiverThread.join();
 #ifndef NDEBUG
         TerminalLock(), std::cerr << "receiverThread joined\n";
@@ -117,18 +115,18 @@ bool common::UDPClient::handleReceiveAndCheckIfEnd(const common::Address &addr, 
             callbackMap.erase(it);
         }
     }
-    if(found && callback != nullptr)
+    if (found && callback != nullptr)
         callback->callbackOnReceive(addr, message);
-    else if(message[0] == -1 && addr.isLoopback(sendSocket.getAddress().getPort()))
+    else if (message[0] == -1 && addr.isLoopback(sendSocket.getAddress().getPort()))
         return true; // end=true if 'magic' message came from sendSocket of the same class instance
-    else if(defaultCallback.get() != nullptr)
+    else if (defaultCallback.get() != nullptr)
         defaultCallback->callbackOnReceive(addr, message);
     return false;
 }
 
 void common::UDPClient::receiverThreadFunction()
 {
-    if(inputBuffer.size() == 0)
+    if (inputBuffer.size() == 0)
         return;
     Address addr;
     bool receiverThreadShouldEnd = false;

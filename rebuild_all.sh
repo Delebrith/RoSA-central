@@ -10,3 +10,4 @@ rebuild()
 rebuild common
 rebuild sensor
 rebuild central
+rebuild config

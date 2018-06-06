@@ -5,10 +5,13 @@ app.controller('logoutController', function($scope, $http, $cookies) {
         var response = $http.post($scope.serverAddress + "/RoSA/logout");
         response.then(
             function (response) {
-                $cookies.remove('session_id');
+                $cookies.remove('sessionId');
+                sessionStorage.clear();
+                $scope.checkSensors = undefined;
                 alert("Wylogowano!");
             },
             function (response) {
+                sessionStorage.clear();
                 alert("Błąd w czasie wylogowania!");
             });
 	}

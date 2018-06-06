@@ -5,7 +5,7 @@
 #include "RestService.h"
 #include "Sensor.h"
 #include "User.h"
-
+/*
 using namespace std;
 using namespace web;
 using namespace http;
@@ -236,4 +236,4 @@ void RestService::post_logout(http_request request) {
     //TODO lerase session
     respond(request, status_codes::OK, json::value::string(U("logged out")));
 
-}
+}*/

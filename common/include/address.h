@@ -49,6 +49,7 @@ public:
     const sockaddr* getAddress() const;
     socklen_t getAddressLength() const;
     socklen_t* getAddressLengthPointer();
+
     uint16_t getPort() const;
 
     // "string" getters:
@@ -65,6 +66,7 @@ public:
     // 'strange' functions, required by speficic implementation details of other parts of the system:
     // isLocalhost is used in UDPClient to check if a special message from loopback address was received
     bool isLoopback(uint16_t port) const;
+
     // incrementPort is used in UDPServer (it sends answer to port from which message was received + 1,
     // so that the from client's point of view, sending requests and receiving answers can be independant)
     void incrementPort();

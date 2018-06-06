@@ -1,103 +1,119 @@
 #include <udp_client.h>
+#include <udp_server.h>
 #include <iostream>
 #include <cstring>
-#include "RestService.h"
+#include "ScriptExecutor.h"
+#include "Communicator.h"
+
+#include "SessionList.h"
 #include "SensorList.h"
+#include "WebServer.h"
+#include "exception.h"
 
-using namespace web;
-using namespace http;
-using namespace utility;
-using namespace http::experimental::listener;
+using namespace std;
 
-std::unique_ptr<RestService, std::default_delete<RestService>> rest;
-SensorList sensorlist;
+using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
-void on_initialize(const string_t& address)
-{
-    // Build our listener's URI from the configured address and the hard-coded path "MyServer/Action"
+SensorList sensorList;
+SessionList sessionList;
+HttpServer httpServer;
 
-    uri_builder sensorUri(address);
-    sensorUri.append_path(U(RestService::base_uri));
-
-    auto addr = sensorUri.to_uri().to_string();
-    rest = std::unique_ptr<RestService>(new RestService(addr, &sensorlist));
-    rest->open().wait();
-
-    ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
-
-    return;
-}
-
-void activate_rest_service(const utility::string_t host)
-{
-    utility::string_t port = U(":8081");
-    utility::string_t address = U(U("http://") + host);
-    address.append(port);
-    on_initialize(address);
-}
-
-void close_rest_service()
-{
-    rest->close().wait();
-    return;
-}
-
-class Callback : public common::UDPClient::Callback
-{
-public:
-    Callback(const std::string str)
-        : name(str)
-    {}
-
-    virtual void callbackOnReceive(const common::Address &address, std::string msg)
-    {
-        static std::hash<const common::Address> hasher;
-        std::cout << name << " - received: '" << msg << "'\nfrom: ";
-        address.print(std::cout);
-        std::cout << "(address hash: " << hasher(address) << ")\n";
-        std::cout << std::endl;
+void executeScripts(Communicator *communicator) {
+    ScriptExecutor executor(communicator);
+    try {
+        executor.execute();
     }
+    catch (std::logic_error) {
+        std::cout << "Problem with creating pipe to listen scripts" << std::endl;
+    }
+}
 
-private:
-    std::string name;
-};
+void server() {
+    try {
+        char buffer[512];
+        common::UDPServer server(7500);
+        server.getSocket().setSendTimeout(2000);
+        std::cout << "UDP server started\n";
+        while (true) {
+            int retval = server.receive(buffer, 511);
+            if (retval < 0) {
+                std::cout << "error, no data received\n";
+                return;
+            }
 
-void test_udp_client(int argc, char **argv)
-{
-    std::cout << "\nTesting UDPClient...\n";
-    if(argc != 4)
-    {
-        std::cout << "Usage: " << argv[0] << " <host> <port1> <port2>\n";
+            //ending message
+            if (buffer[0] == -1 && server.getClientAddress().isLoopback(7501)) {
+                std::cout << "server ending work\n";
+                return;
+            }
+
+            //alarm
+            std::string msg(buffer);
+            std::string address;
+            std::vector<std::string> message;
+            boost::split(message, msg, [](char c) { return c == ' '; });
+            try {
+                address = server.getClientAddress().hostToString();
+                std::cout << "Received from " << address << ": " << msg << std::endl;
+                if (message.size() == 5 && message[0] == "alarm") {
+
+                    if (message[1] == "current_value:" && message[3] == "typical_value:") {
+                        float new_current_value, new_typical_value;
+                        new_current_value = std::stof(message[2]);
+                        new_typical_value = std::stof(message[4]);
+                        sensorList.set_values(address, new_current_value, new_typical_value);
+                    } else {
+                        std::cout << "Bad message from " << address << ": " << msg << std::endl;
+                        std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                    }
+
+                } else {
+                    std::cout << "Bad message from " << address << ": " << msg << std::endl;
+                    std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                }
+            }
+            catch (common::ExceptionInfo &) {
+                std::cout << "Problem with translating address of alarm sender" << std::endl;
+            }
+
+            if (server.send(buffer, retval) > 0)
+                std::cout << "Sent answer\n";
+            else
+                std::cout << "Failed to send answer\n";
+            memset(buffer, 0, sizeof(buffer));
+        }
+    }
+    catch (const std::exception &ex) {
+        std::cerr << ex.what() << "\n";
         return;
     }
-    common::Address server_address1(argv[1], argv[2]);
-    common::Address server_address2(argv[1], argv[3]);
-
-    std::unique_ptr<common::UDPClient::Callback> default_callback = std::unique_ptr<common::UDPClient::Callback>(new Callback("default_callback"));
-    static common::UDPClient client(6000, 512, std::move(default_callback));
-    std::cout << "UDP client started\n";
-    auto send_message_thread = [&](const common::Address &addr, const std::string msg) {
-        client.sendAndSaveCallback(msg, addr, std::unique_ptr<common::UDPClient::Callback>(new Callback("callback(" + msg + ")")));
-    };
-    std::thread thread1(send_message_thread, std::ref(server_address1), "hello1");
-    std::thread thread2(send_message_thread, std::ref(server_address2), "hello2");
-    thread1.join();
-    thread2.join();
 }
+
+
 
 int main(int argc, char **argv)
 {
+
     try
     {
-        activate_rest_service(U("localhost"));
-        test_udp_client(argc, argv);
-        std::cout << "press enter to exit...\n";
-        while (std::cin.get() != '\n')
-        {
-            continue;
-        }
-        close_rest_service();
-        exit(0);
+        Communicator communicator(&sensorList);
+
+        WebServer webServer(&sessionList, &communicator, &httpServer);
+        std::cout << "web server created...\n";
+
+        thread http_server_thread([]() {
+            // Start server
+            httpServer.start();
+        });
+        thread alarm_server_thread(server);
+
+        std::cout << "web server started...\n";
+
+        executeScripts(&communicator);
+        communicator.send_server_terminating_msg();
+        httpServer.stop();
+        alarm_server_thread.join();
+        http_server_thread.join();
     }
     catch(const std::exception &ex)
     {

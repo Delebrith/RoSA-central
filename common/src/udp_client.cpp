@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #ifndef NDEBUG
 #include <iostream>
+#include "terminal_lock.h"
 #endif
 #include <functional>
 
@@ -17,7 +18,7 @@ common::UDPClient::UDPClient(uint16_t port, size_t input_buffer_size, std::uniqu
         ExceptionInfo::warning("initialized UDPClient without buffer - you will never receive answer to what you send");
         receiverThread.join();
 #ifndef NDEBUG
-        std::cerr << "receiverThread joined\n";
+        TerminalLock(), std::cerr << "receiverThread joined\n";
 #endif
     }
 }
@@ -30,7 +31,7 @@ common::UDPClient::UDPClient(common::UDPsocket &send_socket, common::UDPsocket &
         ExceptionInfo::warning("initialized UDPClient without buffer - you will never receive answer to what you send");
         receiverThread.join();
 #ifndef NDEBUG
-        std::cerr << "receiverThread joined\n";
+        TerminalLock(), std::cerr << "receiverThread joined\n";
 #endif
     }
     if (receiveSocket.getAddress().getPort() - sendSocket.getAddress().getPort() != 1)
@@ -42,7 +43,7 @@ common::UDPClient::~UDPClient()
     char magic = -1;
     // if receiverThreadFunction gets such message from address to which sendSocket is bound, thread stops receiving
 #ifndef NDEBUG
-    std::cerr << "UDPClient destructor... ";
+    TerminalLock(), std::cerr << "UDPClient destructor... ";
 #endif
     if (inputBuffer.size() != 0) // if it is equal 0, receiver thread does nothing and was already joined in constructor
     {
@@ -51,7 +52,7 @@ common::UDPClient::~UDPClient()
                     "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
         receiverThread.join();
 #ifndef NDEBUG
-        std::cerr << "receiverThread joined\n";
+        TerminalLock(), std::cerr << "receiverThread joined\n";
 #endif
     }
 }
@@ -93,7 +94,7 @@ int common::UDPClient::receive(char *buffer, size_t size, Address &address_to_fi
 #ifndef NDEBUG
     if(retval > 0)
     {
-        std::cerr << "client received answer from: ";
+        TerminalLock(), std::cerr << "client received answer from: ";
         address_to_fill_in.print(std::cerr);
     }
 #endif

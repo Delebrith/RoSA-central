@@ -4,6 +4,7 @@
 #include <iostream>
 #ifndef NDEBUG
 #include <iostream>
+#include "terminal_lock.h"
 #endif
 
 common::UDPServer::UDPServer(uint16_t port)

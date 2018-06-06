@@ -23,7 +23,7 @@ void executeScripts(Communicator *communicator) {
     try {
         executor.execute();
     }
-    catch (std::logic_error) {
+    catch (std::logic_error &) {
         std::cout << "Problem with creating pipe to listen scripts" << std::endl;
     }
 }
@@ -89,13 +89,46 @@ void server() {
     }
 }
 
+void polling(Communicator *communicator) {
+    common::UDPServer server(7503);
+    std::vector<std::string> sensors;
+    unsigned int time;
+    char buffer;
+    while (true) {
+        sensors = sensorList.get_addresses();
+        if (!sensors.empty()) {
+            std::cout << "jest czujnik do odpytania :D" << std::flush << std::endl;
+            time = 10 * 1000 / sensors.size();
+
+            server.getSocket().setSendTimeout(time);
+            for (auto &it : sensors) {
+                std::cout << "pytamy :D" << std::flush << std::endl;
+                communicator->ask_for_values(it);
+                if (server.receive(&buffer, 1) >= 0)
+                    if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
+                        std::cout << "polling end \n";
+                        return;
+                    }
+            }
+        } else {
+            std::cout << "ni ma czujnika do odpytania :(" << std::flush << std::endl;
+            time = 10 * 1000;
+            server.getSocket().setSendTimeout(time);
+            if (server.receive(&buffer, 1) >= 0)
+                if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
+                    std::cout << "polling end \n";
+                    return;
+                }
+        }
+
+    }
+
+}
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 
-    try
-    {
+    try {
         Communicator communicator(&sensorList);
 
         WebServer webServer(&sessionList, &communicator, &httpServer);
@@ -106,17 +139,18 @@ int main(int argc, char **argv)
             httpServer.start();
         });
         thread alarm_server_thread(server);
-
+        thread polling_thread(polling, &communicator);
         std::cout << "web server started...\n";
 
         executeScripts(&communicator);
-        communicator.send_server_terminating_msg();
+        communicator.send_server_terminating_msg("7500");
+        communicator.send_server_terminating_msg("7503");
         httpServer.stop();
         alarm_server_thread.join();
         http_server_thread.join();
+        polling_thread.join();
     }
-    catch(const std::exception &ex)
-    {
+    catch (const std::exception &ex) {
         std::cerr << ex.what() << "\n";
         return -1;
     }

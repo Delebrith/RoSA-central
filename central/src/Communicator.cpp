@@ -103,9 +103,9 @@ Communicator::Communicator(SensorList *sensorList) : sensorList(sensorList), cli
                                                                                                                  <common::UDPClient::Callback>(
         new Callback("default_callback")))) {}
 
-void Communicator::send_server_terminating_msg() {
+void Communicator::send_server_terminating_msg(std::string port) {
     char magic = -1;
-    if (client.send(&magic, 1, common::Address("localhost", 7500)) < 0) {
+    if (client.send(&magic, 1, common::Address("localhost", port)) < 0) {
         common::ExceptionInfo::warning(
                 "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
     }

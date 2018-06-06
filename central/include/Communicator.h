@@ -24,7 +24,7 @@ public:
 
     std::vector<std::pair<std::string, SensorList::SensorState>> get_sensor_list();
 
-    void send_server_terminating_msg();
+    void send_server_terminating_msg(std::string port);
 private:
     const std::string SensorPort1 = "7000";
     const std::string SensorPort2 = "7001";

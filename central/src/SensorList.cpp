@@ -103,3 +103,12 @@ std::time_t SensorList::get_last_question(std::string address) {
         throw std::invalid_argument("sensor with address" + address + "doesn't exist");
     return iterator->second.last_question;
 }
+
+std::vector<std::string> SensorList::get_addresses() {
+    std::vector<std::string> tmp;
+    std::lock_guard<std::mutex> lock(mutex);
+    for (auto &it: sensors) {
+        tmp.push_back(it.first);
+    }
+    return tmp;
+}

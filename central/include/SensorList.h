@@ -42,6 +42,8 @@ public:
     void set_last_answer(std::string address);
     SensorState get_sensor_state(std::string address);
 
+    std::vector<std::string> get_addresses();
+
     std::time_t get_last_question(std::string address);
     std::vector<std::pair<std::string, SensorState>> get_sensors();
 

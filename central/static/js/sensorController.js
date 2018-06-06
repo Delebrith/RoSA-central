@@ -38,7 +38,7 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
         console.log($scope.sensorArray);
     }
 
-    $scope.refreshSensors = function (address) {
+    $scope.refreshSensor = function (address) {
         var response = $http.get($scope.serverAddress + "/RoSA/sensor/refresh?address=" + encodeURIComponent(address));
         response.then(
             function (response) {

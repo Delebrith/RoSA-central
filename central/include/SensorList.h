@@ -13,14 +13,14 @@ public:
     struct SensorState{
         float current_value = 0;
         float typical_value = 0;
-        float threshold = 0;
+        float threshold = 100;
         SensorStatus status = NEW;
     };
 
     struct SensorInfo {
         float current_value = 0;
         float typical_value = 0;
-        float threshold = 0;
+        float threshold = 100;
         std::time_t last_question;
         std::time_t last_answer;
     };

@@ -23,7 +23,7 @@ void executeScripts(Communicator *communicator) {
     try {
         executor.execute();
     }
-    catch (std::logic_error) {
+    catch (std::logic_error &) {
         std::cout << "Problem with creating pipe to listen scripts" << std::endl;
     }
 }
@@ -91,7 +91,7 @@ void server() {
 
 
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
 
     try

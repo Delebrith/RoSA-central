@@ -20,11 +20,7 @@ class WebServer
 public:
 
     WebServer(SessionList* sessionList, Communicator* communicator, HttpServer* server);
-
-
     static void validateSession(std::shared_ptr<HttpServer::Request> request, SessionList* sessionList);
-    static void log(std::string message);
-    static std::string getTimestamp();
 };
 
 #endif //ROSA_CENTRAL_WEBSERVER_H

@@ -8,13 +8,11 @@
                 <form class="form" role="form" autocomplete="off" id="formAddSensor" method="POST">
                     <div class="form-group">
                         <label>Adres IP</label>
-                        <input type="text" class="form-control form-control-md rounded-0" ng-model="address">
-                        <div class="invalid-feedback">Wprowadź email!</div>
+                        <input type="text" class="form-control form-control-md rounded-0" ng-model="address"/>
                     </div>
                     <div class="form-group">
                         <label>Wartość progu</label>
-                        <input type="number" class="form-control form-control-md rounded-0" ng-model="threshold">
-                        <div class="invalid-feedback">Wprowadź email!</div>
+                        <input type="number" step="0.01" class="form-control form-control-md rounded-0" ng-model="threshold"/>
                     </div>
                     <button class="btn btn-outline-success btn-md float-right" id="btnLogin" ng-click="addSensor()">
                         Dodaj czujnik

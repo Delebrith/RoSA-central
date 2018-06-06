@@ -18,6 +18,7 @@
 #include "WebServer.h"
 #include "Sensor.h"
 #include "Communicator.h"
+#include "Logger.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -37,27 +38,9 @@ void WebServer::validateSession(std::shared_ptr<HttpServer::Request> request, Se
 
     bool exists = sessionList->exists_session(sessionIdCookieString);
     if (exists)
-        log("session found - " + sessionIdCookieString);
+        common::Logger::log("session found - " + sessionIdCookieString);
 }
 
-std::string WebServer::getTimestamp()
-{
-    time_t rawtime;
-    struct tm * timeinfo;
-    char buffer[80];
-
-    time (&rawtime);
-    timeinfo = localtime(&rawtime);
-
-    strftime(buffer,sizeof(buffer),"%d-%m-%Y %I:%M:%S",timeinfo);
-    std::string str(buffer);
-    return str;
-}
-
-void WebServer::log(std::string message)
-{
-    std::cout << "[" << getTimestamp() << "] : " << message << std::endl;
-}
 
 WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpServer* server)
 {
@@ -144,10 +127,11 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             ss << contentTypeHeader;
 
             response->write(SimpleWeb::StatusCode::success_ok, responseBody, SimpleWeb::HttpHeader::parse(ss));
-            WebServer::log("Return list of sensors");
+            common::Logger::log("Return list of sensors");
 
 
-        } catch (std::invalid_argument e)
+        }
+        catch (std::invalid_argument &e)
         {
             response->write(SimpleWeb::StatusCode::client_error_forbidden);
         }
@@ -166,15 +150,15 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             std::string address = query.at("address");
             communicator->ask_for_values(address);
             response->write(SimpleWeb::StatusCode::success_ok, "");
-            WebServer::log("Sensor refresh requested - " + address);
+            common::Logger::log("Sensor refresh requested - " + address);
 
             response->write(SimpleWeb::StatusCode::success_accepted);
-            WebServer::log("Refresh status at " + address);
+            common::Logger::log("Refresh status at " + address);
 
 
-        } catch (std::logic_error e) {
-            response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
-        } catch (std::invalid_argument e) {
+        }
+        catch (std::logic_error &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
 
@@ -185,7 +169,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
         try {
             WebServer::validateSession(request, sessionList);
-        } catch (std::exception e) {
+        } catch (std::exception &e) {
 
             response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
         }
@@ -198,16 +182,13 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
                 query.emplace(field.first, field.second);
             std::string address = query.at("address");
             float threshold = stof(query.at("threshold"));
-            log("0");
             communicator->add_sensor(address, threshold);
-            log("0");
             response->write(SimpleWeb::StatusCode::success_created, "");
-            log("0");
-            WebServer::log("Sensor added - " + address + " with threshold: " + std::to_string(threshold));
-            log("0");
-        } catch (std::logic_error e) {
-            response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
-        } catch (std::invalid_argument e) {
+            common::Logger::log("Sensor added - " + address + " with threshold: " + std::to_string(threshold));
+
+        }
+        catch (std::logic_error &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -216,7 +197,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
         try {
             WebServer::validateSession(request, sessionList);
-        } catch (std::exception e) {
+        } catch (std::exception &e) {
 
             response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
         }
@@ -227,19 +208,15 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             auto query_fields = request->parse_query_string();
             for(auto &field : query_fields)
                 query.emplace(field.first, field.second);
-            log("0");
             std::string address = query.at("address");
-            log("0");
             float threshold = stof(query.at("threshold"));
-            log("0");
             communicator->set_threshold(address, threshold);
-            log("0");
             response->write(SimpleWeb::StatusCode::success_accepted);
-            log("0");
-            WebServer::log("Sensor modified - " + address + " with threshold: " + std::to_string(threshold));
-        } catch (std::logic_error e) {
-            response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
-        } catch (std::invalid_argument e) {
+            common::Logger::log("Sensor modified - " + address + " with threshold: " + std::to_string(threshold));
+
+        }
+        catch (std::logic_error &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -249,7 +226,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
         try {
             WebServer::validateSession(request, sessionList);
-        } catch (std::exception e) {
+        } catch (std::exception &e) {
 
             response->write(SimpleWeb::StatusCode::client_error_forbidden, e.what());
         }
@@ -263,11 +240,11 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             std::string address = query.at("address");
             communicator->erase_sensor(address);
             response->write(SimpleWeb::StatusCode::success_no_content);
-            WebServer::log("Sensor erased - " + address);
+            common::Logger::log("Sensor erased - " + address);
 
-        } catch (std::logic_error e) {
-            response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
-        } catch (std::invalid_argument e) {
+        }
+        catch (std::logic_error &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -289,9 +266,10 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             ss << sessionIdHeader << contentTypeHeader;
 
             response->write(SimpleWeb::StatusCode::success_ok, "", SimpleWeb::HttpHeader::parse(ss));
-            WebServer::log("User login - " + pt.get<string>("username") + "; session: " + sessionId);
+            common::Logger::log("User login - " + pt.get<string>("username") + "; session: " + sessionId);
 
-        } catch (std::invalid_argument e) {
+        } catch (std::invalid_argument &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -312,8 +290,10 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
             response->write(SimpleWeb::StatusCode::success_ok);
 
-            WebServer::log("Session logout - " + sessionIdCookieString);
-        } catch (std::invalid_argument e) {
+            common::Logger::log("Session logout - " + sessionIdCookieString);
+        }
+        catch (std::invalid_argument &e)
+        {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };

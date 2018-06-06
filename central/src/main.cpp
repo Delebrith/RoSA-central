@@ -4,7 +4,7 @@
 #include <cstring>
 #include "ScriptExecutor.h"
 #include "Communicator.h"
-
+#include "Logger.h"
 #include "SessionList.h"
 #include "SensorList.h"
 #include "WebServer.h"
@@ -99,15 +99,14 @@ int main(int argc, char **argv)
         Communicator communicator(&sensorList);
 
         WebServer webServer(&sessionList, &communicator, &httpServer);
-        std::cout << "web server created...\n";
 
         thread http_server_thread([]() {
-            // Start server
             httpServer.start();
         });
-        thread alarm_server_thread(server);
+        common::Logger::log(std::string("Http web server started..."));
 
-        std::cout << "web server started...\n";
+        thread alarm_server_thread(server);
+        common::Logger::log(std::string("Alarm server started..."));
 
         executeScripts(&communicator);
         communicator.send_server_terminating_msg();

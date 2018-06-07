@@ -1,4 +1,4 @@
-rebuild()
+build()
 {
     cd $1
     rm -rf build
@@ -9,6 +9,7 @@ rebuild()
     cd ../..
 }
 
-rebuild common
-rebuild sensor
-rebuild central
+build common
+build sensor
+build central
+build config

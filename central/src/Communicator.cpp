@@ -41,13 +41,10 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
     }
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
-        if (std::difftime(std::time(nullptr), last_question) < 5) {
-            std::cout << "wrong time " << translated_address << std::endl;
+        if (std::difftime(std::time(nullptr), last_question) < 5)
             return;
-        }
     }
     catch (std::logic_error &) {
-        std::cout << "don't exist: " << translated_address << std::endl;
         throw std::invalid_argument("sensor with address" + translated_address + "doesn't exist");
     }
     std::cout << "sent to: " << translated_address << std::endl;
@@ -68,10 +65,8 @@ void Communicator::ask_for_values(std::string &address) {
     }
     try {
         std::time_t last_question = sensorList->get_last_question(translated_address);
-        if (std::difftime(std::time(nullptr), last_question) < 5) {
-            std::cout << "wrong time " << translated_address << std::endl << std::flush;
+        if (std::difftime(std::time(nullptr), last_question) < 5)
             return;
-        }
     }
     catch (std::logic_error &) {
         std::cout << "don't exist: " << translated_address << std::endl << std::flush;
@@ -109,4 +104,57 @@ void Communicator::send_server_terminating_msg(std::string port) {
         common::ExceptionInfo::warning(
                 "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
     }
+}
+
+
+Communicator::Callback_set_threshold::Callback_set_threshold(SensorList *sensorList) : sensorList(sensorList) {}
+
+void Communicator::Callback_set_threshold::callbackOnReceive(const common::Address &address, std::string msg) {
+    try {
+        std::vector<std::string> answer_splited;
+        boost::split(answer_splited, msg, [](char c) { return c == ' '; });
+        if (answer_splited.size() > 1) {
+            if (answer_splited[0] == "threshold:") {
+                float threshold;
+                threshold = std::stof(answer_splited[1]);
+                sensorList->set_threshold(address.hostToString(), threshold);
+                return;
+            }
+        }
+        common::Logger::log(std::string("Invalid answer from " + address.hostToString() + ": " + msg + "\n" +
+                                        "Expected: threshold: <value> "));
+    }
+    catch (std::logic_error &e) {
+        std::cout << e.what() << std::endl;
+    }
+}
+
+Communicator::Callback_get_value::Callback_get_value(SensorList *sensorList) : sensorList(sensorList) {}
+
+void Communicator::Callback_get_value::callbackOnReceive(const common::Address &address, std::string msg) {
+    try {
+        std::vector<std::string> answer_splited;
+        boost::split(answer_splited, msg, [](char c) { return c == ' '; });
+        if (answer_splited.size() > 3) {
+            if (answer_splited[0] == "current_value:" && answer_splited[2] == "typical_value:") {
+                float new_current_value, new_typical_value;
+                new_current_value = std::stof(answer_splited[1]);
+                new_typical_value = std::stof(answer_splited[3]);
+                sensorList->set_values(address.hostToString(), new_current_value, new_typical_value);
+                return;
+            }
+        }
+        common::Logger::log(std::string("Invalid answer from " + address.hostToString() + ": " + msg + "\n" +
+                                        "Expected: current_value: <value> typical_value: <value> "));
+
+    }
+    catch (std::logic_error &e) {
+        std::cout << e.what() << std::endl;
+    }
+}
+
+Communicator::Callback::Callback(const std::string str) : name(str) {}
+
+void Communicator::Callback::callbackOnReceive(const common::Address &address, std::string msg) {
+    common::Logger::log(std::string("Unexpected callback, answer from" + address.hostToString() + ": " + msg));
 }

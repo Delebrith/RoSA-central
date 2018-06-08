@@ -22,17 +22,18 @@ void ScriptExecutor::execute() {
     if ((central_out = open(FIFO_OUT, O_WRONLY)) < 0)
         throw std::logic_error("can't open fifo: central_out");
 
-    std::cout << "Listening for scripts - ON.\n" << std::endl;
+    common::Logger::log(std::string("Listening for scripts - ON."));
 
-    while (true) //jaki warunek?
+    while (true)
     {
         read(central_in, buf, BUFSIZ);
-        if (strcmp("exit", buf) == 0) //pomocnicze na teraz
+        if (strcmp("exit", buf) == 0)
         {
-            printf("Listening OFF.\n");
+            common::Logger::log(std::string("Listening scripts OFF."));
             break;
         } else if (strcmp("", buf) != 0) {
             std::string msg(buf);
+            common::Logger::log(std::string("Script request: " + msg));
             return_msg = execute_command(msg);
             strncpy(buf, return_msg.c_str(), sizeof(buf));
             buf[sizeof(buf) - 1] = 0;

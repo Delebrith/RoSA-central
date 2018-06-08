@@ -1,4 +1,4 @@
-app.controller('logoutController', function($scope, $http, $cookies, $interval) {
+app.controller('logoutController', function ($scope, $http, $cookies, $interval) {
 	$scope.logout = function() {
 
         var response = $http.post($scope.serverAddress + "/RoSA/logout");

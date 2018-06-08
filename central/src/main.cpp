@@ -9,6 +9,7 @@
 #include "SensorList.h"
 #include "WebServer.h"
 #include "exception.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -24,7 +25,7 @@ void executeScripts(Communicator *communicator) {
         executor.execute();
     }
     catch (std::logic_error &) {
-        std::cout << "Problem with creating pipe to listen scripts" << std::endl;
+        common::Logger::log(std::string("Problem with creating pipe to listen scripts"));
     }
 }
 
@@ -32,18 +33,16 @@ void server() {
     try {
         char buffer[512];
         common::UDPServer server(7500);
-        server.getSocket().setSendTimeout(2000);
-        std::cout << "UDP server started\n";
         while (true) {
             int retval = server.receive(buffer, 511);
             if (retval < 0) {
-                std::cout << "error, no data received\n";
+                common::Logger::log(std::string("error, no data received"));
                 return;
             }
 
             //ending message
             if (buffer[0] == -1 && server.getClientAddress().isLoopback(7501)) {
-                std::cout << "server ending work\n";
+                common::Logger::log(std::string("Alarm server ended"));
                 return;
             }
 
@@ -54,7 +53,7 @@ void server() {
             boost::split(message, msg, [](char c) { return c == ' '; });
             try {
                 address = server.getClientAddress().hostToString();
-                std::cout << "Received from " << address << ": " << msg << std::endl;
+                common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
                 if (message.size() == 5 && message[0] == "alarm") {
 
                     if (message[1] == "current_value:" && message[3] == "typical_value:") {
@@ -63,23 +62,20 @@ void server() {
                         new_typical_value = std::stof(message[4]);
                         sensorList.set_values(address, new_current_value, new_typical_value);
                     } else {
-                        std::cout << "Bad message from " << address << ": " << msg << std::endl;
-                        std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                        common::Logger::log(std::string("Invalid message from " + address + ": " + msg + "\n" +
+                                                        "Expected: current_value: <value> typical_value: <value> "));
                     }
 
                 } else {
-                    std::cout << "Bad message from " << address << ": " << msg << std::endl;
-                    std::cout << "Expected: current_value: <value> typical_value: <value> " << std::endl;
+                    common::Logger::log(std::string("Invalid message from " + address + ": " + msg + "\n" +
+                                                    "Expected: current_value: <value> typical_value: <value> "));
                 }
             }
             catch (common::ExceptionInfo &) {
-                std::cout << "Problem with translating address of alarm sender" << std::endl;
+                common::Logger::log(std::string("Problem with translating address of alarm sender"));
             }
 
-            if (server.send(buffer, retval) > 0)
-                std::cout << "Sent answer\n";
-            else
-                std::cout << "Failed to send answer\n";
+            server.send(buffer, retval);
             memset(buffer, 0, sizeof(buffer));
         }
     }
@@ -97,26 +93,23 @@ void polling(Communicator *communicator) {
     while (true) {
         sensors = sensorList.get_addresses();
         if (!sensors.empty()) {
-            std::cout << "jest czujnik do odpytania :D" << std::flush << std::endl;
             time = 10 * 1000 / sensors.size();
 
             server.getSocket().setSendTimeout(time);
             for (auto &it : sensors) {
-                std::cout << "pytamy :D" << std::flush << std::endl;
                 communicator->ask_for_values(it);
                 if (server.receive(&buffer, 1) >= 0)
                     if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
-                        std::cout << "polling end \n";
+                        common::Logger::log(std::string("Polling thread ended"));
                         return;
                     }
             }
         } else {
-            std::cout << "ni ma czujnika do odpytania :(" << std::flush << std::endl;
             time = 10 * 1000;
             server.getSocket().setSendTimeout(time);
             if (server.receive(&buffer, 1) >= 0)
                 if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
-                    std::cout << "polling end \n";
+                    common::Logger::log(std::string("Polling thread ended"));
                     return;
                 }
         }
@@ -132,15 +125,18 @@ int main(int argc, char **argv) {
         Communicator communicator(&sensorList);
 
         WebServer webServer(&sessionList, &communicator, &httpServer);
-        std::cout << "web server created...\n";
-
         thread http_server_thread([]() {
             // Start server
             httpServer.start();
         });
+
+        common::Logger::log(std::string("Http web server started..."));
         thread alarm_server_thread(server);
+
+        common::Logger::log(std::string("Alarm server started..."));
         thread polling_thread(polling, &communicator);
-        std::cout << "web server started...\n";
+
+        common::Logger::log(std::string("Polling thread started..."));
 
         executeScripts(&communicator);
         communicator.send_server_terminating_msg("7500");

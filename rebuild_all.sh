@@ -11,3 +11,6 @@ rebuild common
 rebuild sensor
 rebuild central
 rebuild config
+
+mkdir ~/.RoSA
+touch ~/.RoSA/logs.txt

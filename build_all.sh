@@ -13,3 +13,6 @@ build common
 build sensor
 build central
 build config
+
+mkdir ~/.RoSA
+touch ~/.RoSA/logs.txt

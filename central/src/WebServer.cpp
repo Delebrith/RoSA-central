@@ -282,7 +282,6 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             cookieHeader << request->header.find("Cookie")->second;
             std::string cookieHeaderString;
             cookieHeader >> cookieHeaderString;
-            std::cout << cookieHeaderString << std::endl;
 
             SimpleWeb::CaseInsensitiveMultimap cookie = SimpleWeb::HttpHeader::FieldValue::SemicolonSeparatedAttributes::parse(cookieHeaderString);
             const std::string sessionIdCookieString(cookie.find("sessionId")->second);

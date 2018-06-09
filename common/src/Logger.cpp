@@ -1,9 +1,12 @@
 //
-// Created by pszwed
+// Created by p.szwed
 //
 
 #include <iostream>
+#include <fstream>
+#include <stdlib.h>
 
+#include "file_lock.h"
 #include "terminal_lock.h"
 #include "Logger.h"
 
@@ -23,5 +26,14 @@ std::string common::Logger::getTimestamp()
 
 void common::Logger::log(std::string message)
 {
-    common::TerminalLock(), std::cout << "[" << getTimestamp() << "] : " << message << std::endl;
+    std::string timestamp = getTimestamp();
+    common::TerminalLock(), std::cout << "[" << timestamp << "] : " << message << std::endl;
+    std::ofstream file;
+    std::string homeDir = getenv("HOME");
+    common::FileLock();
+    file.open(homeDir +  "/.RoSA/logs.txt", std::fstream::out | std::fstream::app);
+    file <<  "[" << timestamp << "] : " << message << std::endl;
+    file.flush();
+    file.close();
+
 }

@@ -13,9 +13,6 @@ Sensor::Sensor(std::string address, SensorList::SensorState state)
 
     switch (state.status)
     {
-        case SensorList::SensorStatus::NEW:
-            this->status = "NEW";
-            break;
         case SensorList::SensorStatus::CORRECT:
             this->status = "CORRECT";
             break;

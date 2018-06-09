@@ -1,3 +1,8 @@
+//
+// Created by M. Swianiewicz
+//
+
+
 #include "ScriptExecutor.h"
 
 #define FIFO_IN "../../central_in"
@@ -24,11 +29,9 @@ void ScriptExecutor::execute() {
 
     common::Logger::log(std::string("Listening for scripts - ON."));
 
-    while (true)
-    {
+    while (true) {
         read(central_in, buf, BUFSIZ);
-        if (strcmp("exit", buf) == 0)
-        {
+        if (strcmp("exit", buf) == 0) {
             common::Logger::log(std::string("Listening scripts OFF."));
             break;
         } else if (strcmp("", buf) != 0) {
@@ -103,9 +106,9 @@ std::string ScriptExecutor::get_sensor(std::vector<std::string> &command) {
         else
             status = "correct";
         return "Sensor: " + command[1] + " current_value: " + std::to_string(state.current_value) +
-               " typical_value: " + std::to_string(state.typical_value) +
-               " threshold: " + std::to_string(state.threshold) +
-               " status: " + status;
+                " typical_value: " + std::to_string(state.typical_value) +
+                " threshold: " + std::to_string(state.threshold) +
+                " status: " + status;
     }
     catch (std::logic_error &error) {
         return error.what();

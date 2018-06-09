@@ -15,7 +15,6 @@ using namespace std;
 
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
-SensorList sensorList;
 SessionList sessionList;
 HttpServer httpServer;
 
@@ -29,10 +28,10 @@ void executeScripts(Communicator *communicator) {
     }
 }
 
-void server() {
+void server(SensorList *sensorList, u_int16_t alarm_server_port, u_int16_t client_port) {
     try {
         char buffer[512];
-        common::UDPServer server(7500);
+        common::UDPServer server(alarm_server_port);
         while (true) {
             int retval = server.receive(buffer, 511);
             if (retval < 0) {
@@ -41,7 +40,7 @@ void server() {
             }
 
             //ending message
-            if (buffer[0] == -1 && server.getClientAddress().isLoopback(7501)) {
+            if (buffer[0] == -1 && server.getClientAddress().isLoopback(client_port)) {
                 common::Logger::log(std::string("Alarm server ended"));
                 return;
             }
@@ -60,15 +59,15 @@ void server() {
                         float new_current_value, new_typical_value;
                         new_current_value = std::stof(message[2]);
                         new_typical_value = std::stof(message[4]);
-                        sensorList.set_values(address, new_current_value, new_typical_value);
+                        sensorList->set_values(address, new_current_value, new_typical_value);
                     } else {
-                        common::Logger::log(std::string("Invalid message from " + address + ": " + msg + "\n" +
-                                                        "Expected: current_value: <value> typical_value: <value> "));
+                        common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
+                                                        ". Expected: current_value: <value> typical_value: <value> "));
                     }
 
                 } else {
-                    common::Logger::log(std::string("Invalid message from " + address + ": " + msg + "\n" +
-                                                    "Expected: current_value: <value> typical_value: <value> "));
+                    common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
+                                                    ". Expected: current_value: <value> typical_value: <value> "));
                 }
             }
             catch (common::ExceptionInfo &) {
@@ -85,30 +84,31 @@ void server() {
     }
 }
 
-void polling(Communicator *communicator) {
-    common::UDPServer server(7503);
+void polling(Communicator *communicator, SensorList *sensorList, u_int16_t polling_port, u_int16_t client_port,
+             int loop_time) {
+    common::UDPServer server(polling_port);
     std::vector<std::string> sensors;
     unsigned int time;
     char buffer;
     while (true) {
-        sensors = sensorList.get_addresses();
+        sensors = sensorList->get_addresses();
         if (!sensors.empty()) {
-            time = 10 * 1000 / sensors.size();
+            time = loop_time * 1000 / sensors.size();
 
-            server.getSocket().setSendTimeout(time);
+            server.getSocket().setReceiveTimeout(time);
             for (auto &it : sensors) {
                 communicator->ask_for_values(it);
                 if (server.receive(&buffer, 1) >= 0)
-                    if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
+                    if (buffer == -1 && server.getClientAddress().isLoopback(client_port)) {
                         common::Logger::log(std::string("Polling thread ended"));
                         return;
                     }
             }
         } else {
-            time = 10 * 1000;
-            server.getSocket().setSendTimeout(time);
+            time = loop_time * 1000;
+            server.getSocket().setReceiveTimeout(time);
             if (server.receive(&buffer, 1) >= 0)
-                if (buffer == -1 && server.getClientAddress().isLoopback(7501)) {
+                if (buffer == -1 && server.getClientAddress().isLoopback(client_port)) {
                     common::Logger::log(std::string("Polling thread ended"));
                     return;
                 }
@@ -120,9 +120,19 @@ void polling(Communicator *communicator) {
 
 
 int main(int argc, char **argv) {
+    u_int16_t alarm_server_port = 7500;
+    u_int16_t client_port = 7501;
+    u_int16_t polling_port = 7503;
+    u_int16_t sensor_port1 = 7000;
+    u_int16_t sensor_port2 = 7001;
+    int max_answer_time = 5;
+    int loop_time = 10;
+
+    SensorList sensorList(max_answer_time);
 
     try {
-        Communicator communicator(&sensorList);
+        Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),
+                                  max_answer_time);
 
         WebServer webServer(&sessionList, &communicator, &httpServer);
         thread http_server_thread([]() {
@@ -131,16 +141,16 @@ int main(int argc, char **argv) {
         });
 
         common::Logger::log(std::string("Http web server started..."));
-        thread alarm_server_thread(server);
 
+        thread alarm_server_thread(server, &sensorList, alarm_server_port, client_port);
         common::Logger::log(std::string("Alarm server started..."));
-        thread polling_thread(polling, &communicator);
 
+        thread polling_thread(polling, &communicator, &sensorList, polling_port, client_port, loop_time);
         common::Logger::log(std::string("Polling thread started..."));
 
         executeScripts(&communicator);
-        communicator.send_server_terminating_msg("7500");
-        communicator.send_server_terminating_msg("7503");
+        communicator.send_server_terminating_msg(std::to_string(alarm_server_port));
+        communicator.send_server_terminating_msg(std::to_string(polling_port));
         httpServer.stop();
         alarm_server_thread.join();
         http_server_thread.join();

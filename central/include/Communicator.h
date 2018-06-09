@@ -1,3 +1,8 @@
+//
+// Created by M. Swianiewicz
+//
+
+
 #ifndef ROSA_CENTRAL_COMMUNICATOR_H
 #define ROSA_CENTRAL_COMMUNICATOR_H
 
@@ -10,7 +15,8 @@
 
 class Communicator {
 public:
-    Communicator(SensorList *sensorList);
+    Communicator(SensorList *sensorList, int client_port, std::string sensor_port1, std::string sensor_port2,
+                 int max_answer_time);
 
     void add_sensor(std::string &address, float threshold);
 
@@ -27,14 +33,14 @@ public:
     void send_server_terminating_msg(std::string port);
 
 private:
-    const std::string SensorPort1 = "7000";
-    const std::string SensorPort2 = "7001";
+
 
     class Callback_set_threshold : public common::UDPClient::Callback {
     public:
         Callback_set_threshold(SensorList *sensorList);
 
         void callbackOnReceive(const common::Address &address, std::string msg) override;
+
     private:
         SensorList *sensorList;
     };
@@ -44,6 +50,7 @@ private:
         Callback(const std::string str);
 
         void callbackOnReceive(const common::Address &address, std::string msg) override;
+
     private:
         std::string name;
     };
@@ -53,13 +60,16 @@ private:
         Callback_get_value(SensorList *sensorList);
 
         void callbackOnReceive(const common::Address &address, std::string msg) override;
+
     private:
         SensorList *sensorList;
     };
 
-
     SensorList *sensorList;
     common::UDPClient client;
+    std::string sensor_port1;
+    std::string sensor_port2;
+    int max_answer_time;
 
 };
 

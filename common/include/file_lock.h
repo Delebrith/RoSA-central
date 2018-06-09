@@ -7,10 +7,8 @@
 
 #include <mutex>
 
-namespace common
-{
-    class FileLock
-    {
+namespace common {
+    class FileLock {
     public:
         FileLock();
 

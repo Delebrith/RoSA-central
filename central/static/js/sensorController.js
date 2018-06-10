@@ -1,3 +1,4 @@
+<!--created by p.szwed-->
 var checkSensors;
 
 app.controller("sensorController", function($scope, $http, $cookies, $interval) {

@@ -16,11 +16,13 @@
 #define SENSOR_PORT1 7000
 #define SENSOR_PORT2 7001
 
-#define SERVER_HOST "localhost"
 #define SERVER_PORT 7500
 
-#define SERVER2_HOST "localhost"
+
 #define SERVER2_PORT 7501
+
+std::string SERVER_HOST;
+std::string SERVER2_HOST = "localhost";
 
 std::atomic_int threshold(100);
 std::atomic_int current_value(40);
@@ -172,10 +174,19 @@ int set_threshold_receive_thread()
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    if(argc != 2)
+    {
+        std::cout<<"Usage: sensor <server address>\n";
+        return -1;
+    }
+    SERVER_HOST = std::string(argv[0]);
     std::thread th1(updating_values_thread);
     std::thread th2(set_threshold_receive_thread);
+
+
+
 
     srand(time(NULL));
     char buffer[512];

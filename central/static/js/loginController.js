@@ -1,3 +1,4 @@
+<!--created by p.szwed-->
 app.controller('loginController', function($scope, $http, $cookies, $window) {
 	function invalidUsername()
 	{

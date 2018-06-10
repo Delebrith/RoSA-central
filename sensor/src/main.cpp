@@ -24,9 +24,11 @@
 std::string SERVER_HOST;
 std::string SERVER2_HOST = "localhost";
 
-std::atomic_int threshold(100);
-std::atomic_int current_value(40);
-std::atomic_int typical(0);
+std::atomic<float> threshold(100);
+std::atomic<float> current_value(40);
+std::atomic<float> typical(0);
+
+int sleep_value = 60;
 
 
 void print(std::string s)
@@ -117,7 +119,7 @@ void updating_values_thread()
             }
 
         }
-        sleep(2);
+        sleep(sleep_value);
     }
 }
 
@@ -176,12 +178,18 @@ int set_threshold_receive_thread()
 
 int main(int argc, char **argv)
 {
-    if(argc != 2)
+    if(argc < 2)
     {
         std::cout<<"Usage: sensor <server address>\n";
         return -1;
     }
-    SERVER_HOST = std::string(argv[0]);
+    SERVER_HOST = std::string(argv[1]);
+    if(argc == 3)
+    {
+        sleep_value = atoi(argv[2]);
+    }
+
+
     std::thread th1(updating_values_thread);
     std::thread th2(set_threshold_receive_thread);
 

@@ -29,58 +29,53 @@ void executeScripts(Communicator *communicator) {
 }
 
 void server(SensorList *sensorList, u_int16_t alarm_server_port, u_int16_t client_port) {
-    try {
-        char buffer[512];
-        common::UDPServer server(alarm_server_port);
-        while (true) {
-            int retval = server.receive(buffer, 511);
-            if (retval < 0) {
-                common::Logger::log(std::string("error, no data received"));
-                return;
-            }
 
-            //ending message
-            if (buffer[0] == -1 && server.getClientAddress().isLoopback(client_port)) {
-                common::Logger::log(std::string("Alarm server ended"));
-                return;
-            }
+    char buffer[512];
+    common::UDPServer server(alarm_server_port);
+    while (true) {
+        int retval = server.receive(buffer, 511);
+        if (retval < 0) {
+            common::Logger::log(std::string("error, no data received"));
+            return;
+        }
 
-            //alarm
-            std::string msg(buffer);
-            std::string address;
-            std::vector<std::string> message;
-            boost::split(message, msg, [](char c) { return c == ' '; });
-            try {
-                address = server.getClientAddress().hostToString();
-                common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
-                if (message.size() == 5 && message[0] == "alarm") {
+        //ending message
+        if (buffer[0] == -1 && server.getClientAddress().isLoopback(client_port)) {
+            common::Logger::log(std::string("Alarm server ended"));
+            return;
+        }
 
-                    if (message[1] == "current_value:" && message[3] == "typical_value:") {
-                        float new_current_value, new_typical_value;
-                        new_current_value = std::stof(message[2]);
-                        new_typical_value = std::stof(message[4]);
-                        sensorList->set_values(address, new_current_value, new_typical_value);
-                    } else {
-                        common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
-                                                        ". Expected: current_value: <value> typical_value: <value> "));
-                    }
+        //alarm
+        std::string msg(buffer);
+        std::string address;
+        std::vector<std::string> message;
+        boost::split(message, msg, [](char c) { return c == ' '; });
+        try {
+            address = server.getClientAddress().hostToString();
+            common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
+            if (message.size() == 5 && message[0] == "alarm") {
 
+                if (message[1] == "current_value:" && message[3] == "typical_value:") {
+                    float new_current_value, new_typical_value;
+                    new_current_value = std::stof(message[2]);
+                    new_typical_value = std::stof(message[4]);
+                    sensorList->set_values(address, new_current_value, new_typical_value);
                 } else {
                     common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
                                                     ". Expected: current_value: <value> typical_value: <value> "));
                 }
-            }
-            catch (common::ExceptionInfo &) {
-                common::Logger::log(std::string("Problem with translating address of alarm sender"));
-            }
 
-            server.send(buffer, retval);
-            memset(buffer, 0, sizeof(buffer));
+            } else {
+                common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
+                                                ". Expected: current_value: <value> typical_value: <value> "));
+            }
         }
-    }
-    catch (const std::exception &ex) {
-        std::cerr << ex.what() << "\n";
-        return;
+        catch (common::ExceptionInfo &) {
+            common::Logger::log(std::string("Problem with translating address of alarm sender"));
+        }
+
+        server.send(buffer, retval);
+        memset(buffer, 0, sizeof(buffer));
     }
 }
 

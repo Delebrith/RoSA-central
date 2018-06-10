@@ -5,5 +5,4 @@
 std::mutex common::FileLock::mutex;
 
 common::FileLock::FileLock()
-        : lock(mutex)
-{}
+        : lock(mutex) {}

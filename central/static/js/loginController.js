@@ -41,7 +41,7 @@ app.controller('loginController', function($scope, $http, $cookies, $window) {
 	    	function(response) {
 				succesfulLogin(response);
 				sessionStorage.setItem("username", userCredentialsDto.username);
-				$scope.start();
+                $scope.start();
 	    	},
 	    	function(response){
 				failedLogin(response);

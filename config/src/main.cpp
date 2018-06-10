@@ -1,3 +1,7 @@
+//
+// Created by M. Swianiewicz
+//
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -61,12 +65,6 @@ int main(int argc, const char *argv[]) {
             std::string msg = std::string(argv[1]) + " " + argv[2];
             send(msg);
         } else if (std::strcmp(argv[1], "ask_sensor") == 0 && argc == 3) {
-            std::string msg = std::string(argv[1]) + " " + argv[2];
-            send(msg);
-        } else if (std::strcmp(argv[1], "add_user") == 0 && argc == 3) {
-            std::string msg = std::string(argv[1]) + " " + argv[2];
-            send(msg);
-        } else if (std::strcmp(argv[1], "remove_user") == 0 && argc == 3) {
             std::string msg = std::string(argv[1]) + " " + argv[2];
             send(msg);
         } else if (std::strcmp(argv[1], "exit") == 0 && argc == 2) {

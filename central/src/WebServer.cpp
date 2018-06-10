@@ -139,13 +139,14 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
     };
 
 
-    server->resource["^/RoSA/sensor/refresh$"]["GET"] = [communicator, sessionList](shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
+    server->resource["^/RoSA/sensor/refresh$"]["GET"] = [communicator, sessionList](
+            shared_ptr<HttpServer::Response> response, shared_ptr<HttpServer::Request> request) {
 
         try {
             stringstream stream;
             std::unordered_map<std::string, std::string> query;
             auto query_fields = request->parse_query_string();
-            for(auto &field : query_fields)
+            for (auto &field : query_fields)
                 query.emplace(field.first, field.second);
             std::string address = query.at("address");
             communicator->ask_for_values(address);
@@ -157,8 +158,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
 
         }
-        catch (std::logic_error &e)
-        {
+        catch (std::logic_error &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
 
@@ -187,8 +187,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             common::Logger::log("Sensor added - " + address + " with threshold: " + std::to_string(threshold));
 
         }
-        catch (std::logic_error &e)
-        {
+        catch (std::logic_error &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -215,8 +214,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             common::Logger::log("Sensor modified - " + address + " with threshold: " + std::to_string(threshold));
 
         }
-        catch (std::logic_error &e)
-        {
+        catch (std::logic_error &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -243,8 +241,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             common::Logger::log("Sensor erased - " + address);
 
         }
-        catch (std::logic_error &e)
-        {
+        catch (std::logic_error &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -268,8 +265,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
             response->write(SimpleWeb::StatusCode::success_ok, "", SimpleWeb::HttpHeader::parse(ss));
             common::Logger::log("User login - " + pt.get<string>("username") + "; session: " + sessionId);
 
-        } catch (std::invalid_argument &e)
-        {
+        } catch (std::invalid_argument &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };
@@ -291,8 +287,7 @@ WebServer::WebServer(SessionList* sessionList, Communicator* communicator, HttpS
 
             common::Logger::log("Session logout - " + sessionIdCookieString);
         }
-        catch (std::invalid_argument &e)
-        {
+        catch (std::invalid_argument &e) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
         }
     };

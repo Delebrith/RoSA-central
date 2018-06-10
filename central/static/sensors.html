@@ -37,13 +37,15 @@
 
                         <label>Nowy próg: </label>
 
-                        <input type="number" step="0.01" id="thresholdOf{{i.address}}" class="col-md-6 form-control form-control-md rounded-0" value="0"/>
+                        <input type="number" step="0.01" id="thresholdOf{{i.address}}"
+                               class="col-md-6 form-control form-control-md rounded-0" value="0"/>
 
                         <button type="button" class="btn btn-outline-primary my-2 my-sm-0" ng-click="modifySensor(i.address)">
                             Modyfikuj
                         </button>
 
-                        <button type="button" class="btn btn-outline-success my-2 my-sm-0" ng-click="refreshSensor(i.address)">
+                        <button type="button" class="btn btn-outline-success my-2 my-sm-0"
+                                ng-click="refreshSensor(i.address)">
                             Odpytaj
                         </button>
 

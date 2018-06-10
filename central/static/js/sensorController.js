@@ -5,13 +5,11 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
 
     $scope.sensorArray;
 
-    function failedGetSensor(response)
-    {
+    function failedGetSensor(response) {
         alert('Błąd! ' + response.status);
     }
 
-    function succesfulGetSensor(response)
-    {
+    function succesfulGetSensor(response) {
         $scope.sensorArray = response.data;
         console.log($scope.sensorArray);
     }
@@ -19,22 +17,20 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
     $scope.getSensors = function () {
         var response = $http.get($scope.serverAddress + "/RoSA/sensor");
         response.then(
-        function (response) {
-            succesfulGetSensor(response);
-        },
-        function (response) {
-            failedGetSensor(response);
-        });
+            function (response) {
+                succesfulGetSensor(response);
+            },
+            function (response) {
+                failedGetSensor(response);
+            });
     }
 
 
-    function failedRefreshSensor(response)
-    {
+    function failedRefreshSensor(response) {
         alert('Błąd! ' + response.status);
     }
 
-    function succesfulRefreshSensor(response)
-    {
+    function succesfulRefreshSensor(response) {
         $scope.sensorArray = response.data;
         console.log($scope.sensorArray);
     }
@@ -52,13 +48,11 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
     }
 
 
-    function failedModifySensor(response)
-    {
+    function failedModifySensor(response) {
         alert('Błąd!!' + response.status);
     }
 
-    function succesfulModifySensor(response)
-    {
+    function succesfulModifySensor(response) {
         alert('Sukces!' + response.status);
     }
 
@@ -76,13 +70,11 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
             });
     }
 
-    function failedModifySensor(response)
-    {
+    function failedModifySensor(response) {
         alert('Błąd!' + response.status);
     }
 
-    function succesfulModifySensor(response)
-    {
+    function succesfulModifySensor(response) {
         alert('Sukces!' + response.status);
     }
 
@@ -101,13 +93,11 @@ app.controller("sensorController", function($scope, $http, $cookies, $interval) 
             });
     }
 
-    function failedDeleteSensor(response)
-    {
+    function failedDeleteSensor(response) {
         alert('Błąd!' + response.status);
     }
 
-    function succesfulDeleteSensor(response)
-    {
+    function succesfulDeleteSensor(response) {
         alert('Sukces!' + response.status);
         //change $scope.sensorArray
     }

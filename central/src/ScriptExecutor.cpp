@@ -125,27 +125,6 @@ std::string ScriptExecutor::ask_sensor(std::vector<std::string> &command) {
     return "";
 }
 
-/*
-std::string ScriptExecutor::add_user(std::vector<std::string> &command) {
-    try {
-        userList->add_user(command[1]);
-    }
-    catch (std::logic_error &error) {
-        return error.what();
-    }
-    return "User " + command[1] + " added";
-}
-
-std::string ScriptExecutor::erase_user(std::vector<std::string> &command) {
-    try {
-        userList->erase_user(command[1]);
-    }
-    catch (std::logic_error &error) {
-        return error.what();
-    }
-    return "User " + command[1] + " erased";
-}
-*/
 std::string ScriptExecutor::execute_command(std::string &msg) {
     std::vector<std::string> command;
     boost::split(command, msg, [](char c) { return c == ' '; });

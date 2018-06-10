@@ -55,6 +55,8 @@ public:
     std::time_t get_time_flag_setting(std::string address);
     std::vector<std::pair<std::string, SensorState>> get_sensors();
 
+    void write_to_file();
+
 
 };
 

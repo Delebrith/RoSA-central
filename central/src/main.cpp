@@ -2,9 +2,9 @@
 #include <udp_server.h>
 #include <iostream>
 #include <cstring>
+#include <fstream>
 #include "ScriptExecutor.h"
 #include "Communicator.h"
-
 #include "SessionList.h"
 #include "SensorList.h"
 #include "WebServer.h"
@@ -113,11 +113,32 @@ void polling(Communicator *communicator, SensorList *sensorList, u_int16_t polli
                     return;
                 }
         }
-
+        sensorList->write_to_file();
+        common::Logger::log(std::string("Saving list of sensors to file"));
     }
 
 }
 
+void init_from_file(Communicator *communicator) {
+    std::ifstream file;
+    std::string homeDir = getenv("HOME");
+
+    std::string address;
+    float threshold;
+
+    file.open(homeDir + "/.RoSA/data.txt");
+    try {
+        while (file.peek() != std::ifstream::traits_type::eof()) {
+            file >> address >> threshold;
+            communicator->add_sensor(address, threshold);
+        }
+    }
+    catch (std::logic_error &error) {
+        common::Logger::log(std::string("Adding sensors from file filed, invalid data ") + error.what());
+
+    }
+    file.close();
+}
 
 int main(int argc, char **argv) {
     u_int16_t alarm_server_port = 7500;
@@ -129,10 +150,19 @@ int main(int argc, char **argv) {
     int loop_time = 10;
 
     SensorList sensorList(max_answer_time);
+    Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),
+                              max_answer_time);
+
+    if (argc > 1 && std::strcmp(argv[1], "init_from_file") == 0) {
+        try {
+            init_from_file(&communicator);
+        }
+        catch (std::logic_error &) {
+            common::Logger::log(std::string("Problems with opening file"));
+        }
+    }
 
     try {
-        Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),
-                                  max_answer_time);
 
         WebServer webServer(&sessionList, &communicator, &httpServer);
         thread http_server_thread([]() {
@@ -155,6 +185,8 @@ int main(int argc, char **argv) {
         alarm_server_thread.join();
         http_server_thread.join();
         polling_thread.join();
+        sensorList.write_to_file();
+        common::Logger::log(std::string("Saving list of sensors to file"));
     }
     catch (const std::exception &ex) {
         std::cerr << ex.what() << "\n";

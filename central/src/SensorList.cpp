@@ -4,6 +4,8 @@
 
 
 #include "SensorList.h"
+#include "Logger.h"
+#include <fstream>
 
 void SensorList::add_sensor(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -101,6 +103,8 @@ void SensorList::set_flag(std::string address) {
     if (!iterator->second.flag) {
         iterator->second.flag = true;
         iterator->second.time_setting_flag = std::time(nullptr);
+    } else if (std::difftime(std::time(nullptr), iterator->second.time_setting_flag) > max_answer_time) {
+        common::Logger::log(std::string("WARNING! Sensor " + iterator->first + " doesn't respond"));
     }
 }
 
@@ -129,3 +133,23 @@ std::time_t SensorList::get_last_question(std::string address) {
 }
 
 SensorList::SensorList(int max_answer_time) : max_answer_time(max_answer_time) {}
+
+
+void SensorList::write_to_file() {
+    std::vector<std::pair<std::string, float>> addresses;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (auto &it: sensors) {
+            addresses.emplace_back(it.first, it.second.threshold);
+        }
+    }
+
+    std::ofstream file;
+    std::string homeDir = getenv("HOME");
+
+    file.open(homeDir + "/.RoSA/data.txt", std::fstream::out);
+    for (auto &it: addresses) {
+        file << it.first << " " << it.second << std::endl;
+    }
+    file.close();
+}

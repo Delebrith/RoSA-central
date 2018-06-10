@@ -16,3 +16,4 @@ build config
 
 mkdir ~/.RoSA
 touch ~/.RoSA/logs.txt
+touch ~/.RoSA/data.txt

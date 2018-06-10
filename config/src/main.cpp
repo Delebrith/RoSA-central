@@ -67,12 +67,6 @@ int main(int argc, const char *argv[]) {
         } else if (std::strcmp(argv[1], "ask_sensor") == 0 && argc == 3) {
             std::string msg = std::string(argv[1]) + " " + argv[2];
             send(msg);
-        } else if (std::strcmp(argv[1], "add_user") == 0 && argc == 3) {
-            std::string msg = std::string(argv[1]) + " " + argv[2];
-            send(msg);
-        } else if (std::strcmp(argv[1], "remove_user") == 0 && argc == 3) {
-            std::string msg = std::string(argv[1]) + " " + argv[2];
-            send(msg);
         } else if (std::strcmp(argv[1], "exit") == 0 && argc == 2) {
             std::string msg = std::string(argv[1]);
             send(msg);

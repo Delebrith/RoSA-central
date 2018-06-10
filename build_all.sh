@@ -4,7 +4,7 @@ build()
     rm -rf build
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Debug .. # will be changed to Release
+    cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j$(nproc) # number of parallel make jobs = number of CPU cores
     cd ../..
 }

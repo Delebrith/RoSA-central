@@ -11,6 +11,7 @@
 
 #include <udp_server.h>
 #include <udp_client.h>
+#include <terminal_lock.h>
 
 #define SENSOR_PORT1 7000
 #define SENSOR_PORT2 7001
@@ -35,7 +36,7 @@ void print(std::string s)
 
     std::stringstream sout;
     sout << "<UTC:" << dt << ">" << s << "\n";
-
+    common::TerminalLock();
     std::cout<<sout.str();
 }
 

@@ -41,6 +41,7 @@ void send(std::string msg) {
     }
 
     n = write(central_in, str, sizeof(str));
+    close(central_in);
     if (n == 0) {
         std::cout << "Can't write the script message." << std::endl;
     }
@@ -51,7 +52,6 @@ void send(std::string msg) {
         }
         std::cout << str << std::endl;
     }
-    close(central_in);
     close(central_out);
 }
 

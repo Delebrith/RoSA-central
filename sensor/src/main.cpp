@@ -7,7 +7,7 @@ int main(int argc, char **argv)
     {
         if(argc != 2)
         {
-            std::cout << "Usage: " << argv[0] << " <port>\n";
+            std::cout << "Usage: " << argv[0] << " <port> [refresh time]\n";
             return -1;
         }
         char buffer[512];

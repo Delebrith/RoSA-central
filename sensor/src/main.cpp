@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 {
     if(argc < 2)
     {
-        std::cout<<"Usage: sensor <server address> [refresh time sec]\n";
+        std::cout<<"Usage: sensor <server address> [refresh time sec = 60]\n";
         return -1;
     }
     SERVER_HOST = std::string(argv[1]);

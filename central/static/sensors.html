@@ -1,0 +1,61 @@
+<!--created by p.szwed-->
+<div id="sensors" ng-controller="sensorController" class="col-md-11 mx-auto">
+
+    </br></br>
+    <h2>Stan czujników</h2>
+    </br>
+
+    </br>
+    <div id="sensorlist" class="card">
+        <table class="table" style="text-align: center">
+            <thead>
+            <th class="col-md-3">Adres</th>
+            <th>Próg</th>
+            <th>Wartość aktualna</th>
+            <th>Wartość średnia</th>
+            <th>Status</th>
+            <th>Akcje</th>
+            </thead>
+            <tr ng-repeat="i in sensorArray">
+                <td>
+                    {{i.address}}
+                </td>
+                <td>
+                    {{i.threshold}}
+                </td>
+                <td>
+                    {{i.currentValue}}
+                </td>
+                <td>
+                    {{i.typicalValue}}
+                </td>
+                <td>
+                    {{i.status}}
+                </td>
+                <td class="col-md-6" >
+                    <div class="col-md-12 row justify-content-around row justify-content-around">
+
+                        <label>Nowy próg: </label>
+
+                        <input type="number" step="0.01" id="thresholdOf{{i.address}}"
+                               class="col-md-6 form-control form-control-md rounded-0" value="0"/>
+
+                        <button type="button" class="btn btn-outline-primary my-2 my-sm-0" ng-click="modifySensor(i.address)">
+                            Modyfikuj
+                        </button>
+
+                        <button type="button" class="btn btn-outline-success my-2 my-sm-0"
+                                ng-click="refreshSensor(i.address)">
+                            Odpytaj
+                        </button>
+
+                        <button type="button" class="btn btn-outline-danger my-2 my-sm-0" ng-click="deleteSensor(i.address)">
+                            Usuń
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>

@@ -1,0 +1,27 @@
+<!--created by p.szwed-->
+<div ng-controller="sensorController">
+        <!-- form card -->
+        <div class="card rounded-0 card-success" style="margin-top: 40px">
+            <div class="card-header">
+                <h4 class="mb-0">Nowy czujnik</h4>
+            </div>
+            <div class="card-body">
+                <form class="form" role="form" autocomplete="off" id="formAddSensor" method="POST">
+                    <div class="form-group">
+                        <label>Adres IP</label>
+                        <input type="text" class="form-control form-control-md rounded-0" ng-model="address"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Wartość progu</label>
+                        <input type="number" step="0.01" class="form-control form-control-md rounded-0"
+                               ng-model="threshold"/>
+                    </div>
+                    <button class="btn btn-outline-success btn-md float-right" id="btnLogin" ng-click="addSensor()">
+                        Dodaj czujnik
+                    </button>
+                </form>
+            </div>
+            <!--/card-block-->
+        </div>
+        <!-- /form card login -->
+</div>

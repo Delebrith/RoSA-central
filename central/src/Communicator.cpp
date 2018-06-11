@@ -66,7 +66,7 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
             return;
     }
     catch (std::logic_error &) {
-        throw std::invalid_argument("sensor with address" + translated_address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + translated_address + " doesn't exist");
     }
 
     common::Logger::log(std::string("Sent message set_threshold to: " + translated_address + ""));
@@ -92,7 +92,7 @@ void Communicator::ask_for_values(std::string &address) {
     }
     catch (std::logic_error &) {
         std::cout << "don't exist: " << translated_address << std::endl << std::flush;
-        throw std::invalid_argument("sensor with address" + translated_address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + translated_address + " doesn't exist");
     }
 
     common::Logger::log(std::string("Sent message get_value to: " + translated_address + ""));

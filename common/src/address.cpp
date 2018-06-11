@@ -151,16 +151,12 @@ void common::Address::print(std::ostream &os) const
 
 bool common::Address::operator<(const common::Address &other) const
 {
-    if(addressLength != other.addressLength)
-        return addressLength < other.addressLength;
-    return std::memcmp(getAddress(), other.getAddress(), addressLength) < 0;
+    return toString() < other.toString();
 }
 
 bool common::Address::operator==(const common::Address &other) const
 {
-    if(addressLength != other.addressLength)
-        return false;
-    return std::memcmp(getAddress(), other.getAddress(), addressLength) == 0;
+    return toString() == other.toString();
 }
 
 bool common::Address::operator!=(const common::Address &other) const

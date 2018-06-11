@@ -136,7 +136,7 @@ void Communicator::Callback_set_threshold::callbackOnReceive(const common::Addre
                 float threshold;
                 threshold = std::stof(answer_splited[1]);
                 sensorList->set_threshold(address.hostToString(), threshold);
-                common::Logger::log(std::string("Answer message from: " + address.hostToString() + "set threshold to " +
+                common::Logger::log(std::string("Answer message from: " + address.hostToString() + " set threshold to " +
                                                 std::to_string(threshold)));
                 return;
             }
@@ -162,7 +162,7 @@ void Communicator::Callback_get_value::callbackOnReceive(const common::Address &
                 new_typical_value = std::stof(answer_splited[3]);
                 sensorList->set_values(address.hostToString(), new_current_value, new_typical_value);
                 common::Logger::log(std::string(
-                        "Answer message from: " + address.hostToString() + "Set: current_value to " +
+                        "Answer message from: " + address.hostToString() + " Set: current_value to " +
                         std::to_string(new_current_value)
                         + ", typical_value set to " + std::to_string(new_typical_value)));
                 return;

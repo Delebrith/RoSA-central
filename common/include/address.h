@@ -88,11 +88,8 @@ struct hash<const common::Address>
 {
     size_t operator()(const common::Address &a) const
     {
-        size_t retval;
-        constexpr unsigned halfsize = sizeof(retval) / 2;
-        std::memcpy(&retval, a.getAddress()->sa_data, halfsize); // copy first halfsize bytes of adddress data to hash
-        std::memcpy((char*)&retval + halfsize, a.getAddress()->sa_data + sizeof(a.getAddress()->sa_data) - halfsize, halfsize); // copy last halfsize bytes
-        return retval;
+        std::hash<std::string> hasher;
+        return hasher(a.toString());
     }
 };
 }

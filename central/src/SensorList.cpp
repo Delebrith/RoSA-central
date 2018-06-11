@@ -19,14 +19,14 @@ void SensorList::erase_sensor(std::string address) {
         i = sensors.erase(address);
     }
     if (i == 0)
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
 }
 
 void SensorList::set_threshold(std::string address, float new_threshold) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     iterator->second.threshold = new_threshold;
     iterator->second.flag = false;
 }
@@ -35,7 +35,7 @@ void SensorList::set_values(std::string address, float new_current_value, float 
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     iterator->second.current_value = new_current_value;
     iterator->second.typical_value = new_typical_value;
     iterator->second.flag = false;
@@ -49,7 +49,7 @@ SensorList::SensorState SensorList::get_sensor_state(std::string address) {
         std::lock_guard<std::mutex> lock(mutex);
         auto iterator = sensors.find(address);
         if (iterator == sensors.end())
-            throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+            throw std::invalid_argument("sensor with address " + address + " doesn't exist");
         info = iterator->second;
     }
     state.threshold = info.threshold;
@@ -92,7 +92,7 @@ std::time_t SensorList::get_time_flag_setting(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     return iterator->second.time_setting_flag;
 }
 
@@ -100,7 +100,7 @@ void SensorList::set_last_value_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     iterator->second.last_value_question = std::time(nullptr);
     if (!iterator->second.flag) {
         iterator->second.flag = true;
@@ -114,7 +114,7 @@ std::time_t SensorList::get_last_value_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     return iterator->second.last_value_question;
 }
 
@@ -122,7 +122,7 @@ void SensorList::set_last_threshold_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     iterator->second.last_threshold_question = std::time(nullptr);
     if (!iterator->second.flag) {
         iterator->second.flag = true;
@@ -136,7 +136,7 @@ std::time_t SensorList::get_last_threshold_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     return iterator->second.last_threshold_question;
 }
 

@@ -180,5 +180,5 @@ void Communicator::Callback_get_value::callbackOnReceive(const common::Address &
 Communicator::Callback::Callback(const std::string str) : name(str) {}
 
 void Communicator::Callback::callbackOnReceive(const common::Address &address, std::string msg) {
-    common::Logger::log(std::string("Unexpected callback, answer from" + address.hostToString() + ": " + msg));
+    common::Logger::log(std::string("Unexpected callback, answer from " + address.hostToString() + ": " + msg));
 }

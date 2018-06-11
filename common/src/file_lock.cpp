@@ -1,4 +1,6 @@
-// created by p.szwed
+//
+// Created by p.szwed
+//
 
 #include "file_lock.h"
 

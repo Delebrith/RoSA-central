@@ -1,4 +1,6 @@
-// author: Tomasz Nowak
+//
+// Created by T. Nowak
+//
 
 #pragma once
 #include <exception>

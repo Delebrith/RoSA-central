@@ -1,3 +1,7 @@
+#
+# Created by T. Nowak, p. szewd
+#
+
 rebuild()
 {
     cd $1

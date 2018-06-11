@@ -98,7 +98,7 @@ void SensorList::set_flag(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
     iterator->second.last_question = std::time(nullptr);
     if (!iterator->second.flag) {
         iterator->second.flag = true;

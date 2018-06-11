@@ -1,4 +1,6 @@
-//from https://github.com/eidheim/Simple-Web-Server
+//
+// From https://github.com/eidheim/Simple-Web-Server
+//
 
 #ifndef SIMPLE_WEB_STATUS_CODE_HPP
 #define SIMPLE_WEB_STATUS_CODE_HPP

@@ -1,4 +1,8 @@
-// author: Tomasz Nowak
+//
+// Created by T. Nowak
+//
+
+#pragma once
 #include <mutex>
 
 // Simple class holding global mutex, locks it in constructor and automaticallly unlocks in destructor.

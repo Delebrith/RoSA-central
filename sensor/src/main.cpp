@@ -1,3 +1,6 @@
+//
+// Created by J. Jakobczyk
+//
 
 #include <iostream>
 #include <thread>

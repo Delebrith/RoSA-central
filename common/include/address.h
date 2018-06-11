@@ -1,3 +1,7 @@
+//
+// Created by T. Nowak
+//
+
 #pragma once
 #include <netdb.h>
 #include <ostream>

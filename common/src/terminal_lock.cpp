@@ -1,4 +1,7 @@
-// author: Tomasz Nowak
+//
+// Created by T. Nowak
+//
+
 #include "terminal_lock.h"
 
 // This .cpp file is trivial, but I could not put everything in .h (static mutex must be created here)

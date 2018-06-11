@@ -1,3 +1,7 @@
+//
+// Created by M. Swianiewicz
+//
+
 #ifndef ROSA_CENTRAL_SENSORLIST_H
 #define ROSA_CENTRAL_SENSORLIST_H
 

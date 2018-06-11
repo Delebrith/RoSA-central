@@ -1,3 +1,7 @@
+//
+// Created by T. Nowak
+//
+
 #include "udp_client.h"
 #include "exception.h"
 #include <unistd.h>
@@ -40,14 +44,14 @@ common::UDPClient::UDPClient(common::UDPsocket &send_socket, common::UDPsocket &
 
 common::UDPClient::~UDPClient()
 {
-    char magic = -1;
+    char magic_msg = 0;
     // if receiverThreadFunction gets such message from address to which sendSocket is bound, thread stops receiving
 #ifndef NDEBUG
     TerminalLock(), std::cerr << "UDPClient destructor... ";
 #endif
     if (inputBuffer.size() != 0) // if it is equal 0, receiver thread does nothing and was already joined in constructor
     {
-        if (send(&magic, 1, receiveSocket.getAddress()) < 0)
+        if (send(&magic_msg, 1, receiveSocket.getAddress()) < 0)
             ExceptionInfo::warning(
                     "CRITICAL ERROR - could not send kill message to receiver thread - the program might lock down");
         receiverThread.join();
@@ -76,10 +80,7 @@ void common::UDPClient::sendAndSaveCallback(const std::string &message, const co
         std::lock_guard<std::mutex> lock(callbackMapMutex);
         auto it = callbackMap.find(address);
         if(it != callbackMap.end())
-        {
-            ExceptionInfo::warning("callback for address " + address.toString() + " overwritten in the map");
             it->second = std::move(callback);
-        }
         else
             callbackMap.emplace_hint(it, address, std::move(callback));
     }
@@ -115,9 +116,9 @@ bool common::UDPClient::handleReceiveAndCheckIfEnd(const common::Address &addr, 
             callbackMap.erase(it);
         }
     }
-    if (found && callback != nullptr)
+    if(found && callback != nullptr)
         callback->callbackOnReceive(addr, message);
-    else if (message[0] == -1 && addr.isLoopback(sendSocket.getAddress().getPort()))
+    else if(message[0] == 0 && addr.isLoopback(sendSocket.getAddress().getPort()))
         return true; // end=true if 'magic' message came from sendSocket of the same class instance
     else if (defaultCallback.get() != nullptr)
         defaultCallback->callbackOnReceive(addr, message);

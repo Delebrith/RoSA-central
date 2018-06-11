@@ -1,5 +1,5 @@
 //
-// Created by delebrith on 27.05.18.
+// Created by p. szwed
 //
 
 #ifndef ROSA_CENTRAL_SESSION_LIST_H

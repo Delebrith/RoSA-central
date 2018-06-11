@@ -1,3 +1,7 @@
+#
+# Created by T. Nowak
+#
+
 cmake_minimum_required(VERSION 2.9)
 set(CMAKE_CXX_STANDARD 11)
 project(rosa_common)

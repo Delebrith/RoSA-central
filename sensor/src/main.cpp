@@ -11,19 +11,24 @@
 
 #include <udp_server.h>
 #include <udp_client.h>
+#include <terminal_lock.h>
 
 #define SENSOR_PORT1 7000
 #define SENSOR_PORT2 7001
 
-#define SERVER_HOST "localhost"
 #define SERVER_PORT 7500
 
-#define SERVER2_HOST "localhost"
+
 #define SERVER2_PORT 7501
 
-std::atomic_int threshold(100);
-std::atomic_int current_value(40);
-std::atomic_int typical(0);
+std::string SERVER_HOST;
+std::string SERVER2_HOST = "localhost";
+
+std::atomic<float> threshold(100);
+std::atomic<float> current_value(40);
+std::atomic<float> typical(0);
+
+int sleep_value = 60;
 
 
 void print(std::string s)
@@ -35,7 +40,7 @@ void print(std::string s)
 
     std::stringstream sout;
     sout << "<UTC:" << dt << ">" << s << "\n";
-
+    common::TerminalLock();
     std::cout<<sout.str();
 }
 
@@ -114,7 +119,7 @@ void updating_values_thread()
             }
 
         }
-        sleep(2);
+        sleep(sleep_value);
     }
 }
 
@@ -171,10 +176,25 @@ int set_threshold_receive_thread()
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    if(argc < 2)
+    {
+        std::cout<<"Usage: sensor <server address>\n";
+        return -1;
+    }
+    SERVER_HOST = std::string(argv[1]);
+    if(argc == 3)
+    {
+        sleep_value = atoi(argv[2]);
+    }
+
+
     std::thread th1(updating_values_thread);
     std::thread th2(set_threshold_receive_thread);
+
+
+
 
     srand(time(NULL));
     char buffer[512];

@@ -144,7 +144,23 @@ void init_from_file(Communicator *communicator) {
     file.close();
 }
 
+void help(const char *program_name) {
+    std::cout << "\nUsage: " << program_name << " [command]\n\n"
+                                                "Available commands:\n\n"
+                                                "- init_from_file \n"
+                                                "- init_empty \n";
+
+    std::exit(1);
+}
+
 int main(int argc, char **argv) {
+    if (argc != 2) {
+        help(argv[0]);
+    }
+    if ((std::strcmp(argv[1], "init_from_file") == 0 && std::strcmp(argv[1], "init_empty") == 0)) {
+        help(argv[0]);
+    }
+
     constexpr u_int16_t alarm_server_port = 7500;
     constexpr u_int16_t client_port = 7501;
     constexpr u_int16_t polling_port = 7503;
@@ -157,7 +173,7 @@ int main(int argc, char **argv) {
     Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),
                               max_answer_time);
 
-    if (argc > 1 && std::strcmp(argv[1], "init_from_file") == 0) {
+    if (std::strcmp(argv[1], "init_from_file") == 0) {
         try {
             init_from_file(&communicator);
         }
@@ -165,6 +181,7 @@ int main(int argc, char **argv) {
             common::Logger::log(std::string("Problems with opening file"));
         }
     }
+
 
     try {
 

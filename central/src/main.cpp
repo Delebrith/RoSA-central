@@ -58,7 +58,6 @@ void server(SensorList *sensorList, u_int16_t alarm_server_port, u_int16_t clien
             boost::split(message, msg, [](char c) { return c == ' '; });
 
             address = server.getClientAddress().hostToString();
-            common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
             if (message.size() == 5 && message[0] == "alarm") {
 
                 if (message[1] == "current_value:" && message[3] == "typical_value:") {
@@ -66,6 +65,7 @@ void server(SensorList *sensorList, u_int16_t alarm_server_port, u_int16_t clien
                     new_current_value = std::stof(message[2]);
                     new_typical_value = std::stof(message[4]);
                     sensorList->set_values(address, new_current_value, new_typical_value);
+                    common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
                 } else {
                     common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
                                                     ". Expected: current_value: <value> typical_value: <value> "));
@@ -145,13 +145,13 @@ void init_from_file(Communicator *communicator) {
 }
 
 int main(int argc, char **argv) {
-    u_int16_t alarm_server_port = 7500;
-    u_int16_t client_port = 7501;
-    u_int16_t polling_port = 7503;
-    u_int16_t sensor_port1 = 7000;
-    u_int16_t sensor_port2 = 7001;
-    int max_answer_time = 5;
-    int loop_time = 10;
+    constexpr u_int16_t alarm_server_port = 7500;
+    constexpr u_int16_t client_port = 7501;
+    constexpr u_int16_t polling_port = 7503;
+    constexpr u_int16_t sensor_port1 = 7000;
+    constexpr u_int16_t sensor_port2 = 7001;
+    constexpr int max_answer_time = 5;
+    constexpr int loop_time = 40;
 
     SensorList sensorList(max_answer_time);
     Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),

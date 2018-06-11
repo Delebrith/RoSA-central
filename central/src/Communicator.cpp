@@ -61,7 +61,7 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
     }
 
     try {
-        std::time_t last_question = sensorList->get_last_question(translated_address);
+        std::time_t last_question = sensorList->get_last_threshold_question(translated_address);
         if (std::difftime(std::time(nullptr), last_question) < max_answer_time)
             return;
     }
@@ -72,7 +72,7 @@ void Communicator::set_threshold(std::string &address, float new_threshold) {
     common::Logger::log(std::string("Sent message set_threshold to: " + translated_address + ""));
     client.sendAndSaveCallback("set_threshold " + std::to_string(new_threshold), server_address,
                                std::unique_ptr<common::UDPClient::Callback>(new Callback_set_threshold(sensorList)));
-    sensorList->set_flag(translated_address);
+    sensorList->set_last_threshold_question(translated_address);
 }
 
 void Communicator::ask_for_values(std::string &address) {
@@ -86,7 +86,7 @@ void Communicator::ask_for_values(std::string &address) {
         throw std::logic_error("Incorrect address format");
     }
     try {
-        std::time_t last_question = sensorList->get_last_question(translated_address);
+        std::time_t last_question = sensorList->get_last_value_question(translated_address);
         if (std::difftime(std::time(nullptr), last_question) < max_answer_time)
             return;
     }
@@ -98,7 +98,7 @@ void Communicator::ask_for_values(std::string &address) {
     common::Logger::log(std::string("Sent message get_value to: " + translated_address + ""));
     client.sendAndSaveCallback("get_value", server_address,
                                std::unique_ptr<common::UDPClient::Callback>(new Callback_get_value(sensorList)));
-    sensorList->set_flag(translated_address);
+    sensorList->set_last_value_question(translated_address);
 }
 
 SensorList::SensorState Communicator::get_sensor_state(std::string &address) {

@@ -79,12 +79,6 @@ std::vector<std::pair<std::string, SensorList::SensorState>> SensorList::get_sen
     return tmp;
 }
 
-bool SensorList::exist(std::string address) {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto iterator = sensors.find(address);
-    return iterator != sensors.end();
-}
-
 std::vector<std::string> SensorList::get_addresses() {
     std::vector<std::string> tmp;
     std::lock_guard<std::mutex> lock(mutex);
@@ -92,20 +86,6 @@ std::vector<std::string> SensorList::get_addresses() {
         tmp.push_back(it.first);
     }
     return tmp;
-}
-
-void SensorList::set_flag(std::string address) {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto iterator = sensors.find(address);
-    if (iterator == sensors.end())
-        throw std::invalid_argument("sensor with address " + address + " doesn't exist");
-    iterator->second.last_question = std::time(nullptr);
-    if (!iterator->second.flag) {
-        iterator->second.flag = true;
-        iterator->second.time_setting_flag = std::time(nullptr);
-    } else if (std::difftime(std::time(nullptr), iterator->second.time_setting_flag) > max_answer_time) {
-        common::Logger::log(std::string("WARNING! Sensor " + iterator->first + " doesn't respond"));
-    }
 }
 
 std::time_t SensorList::get_time_flag_setting(std::string address) {
@@ -116,21 +96,50 @@ std::time_t SensorList::get_time_flag_setting(std::string address) {
     return iterator->second.time_setting_flag;
 }
 
-void SensorList::set_last_question(std::string address) {
+void SensorList::set_last_value_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
         throw std::invalid_argument("sensor with address" + address + "doesn't exist");
-    iterator->second.last_question = std::time(nullptr);
+    iterator->second.last_value_question = std::time(nullptr);
+    if (!iterator->second.flag) {
+        iterator->second.flag = true;
+        iterator->second.time_setting_flag = std::time(nullptr);
+    } else if (std::difftime(std::time(nullptr), iterator->second.time_setting_flag) > max_answer_time) {
+        common::Logger::log(std::string("WARNING! Sensor " + iterator->first + " doesn't respond"));
+    }
 }
 
-std::time_t SensorList::get_last_question(std::string address) {
+std::time_t SensorList::get_last_value_question(std::string address) {
     std::lock_guard<std::mutex> lock(mutex);
     auto iterator = sensors.find(address);
     if (iterator == sensors.end())
         throw std::invalid_argument("sensor with address" + address + "doesn't exist");
-    return iterator->second.last_question;
+    return iterator->second.last_value_question;
 }
+
+void SensorList::set_last_threshold_question(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    iterator->second.last_threshold_question = std::time(nullptr);
+    if (!iterator->second.flag) {
+        iterator->second.flag = true;
+        iterator->second.time_setting_flag = std::time(nullptr);
+    } else if (std::difftime(std::time(nullptr), iterator->second.time_setting_flag) > max_answer_time) {
+        common::Logger::log(std::string("WARNING! Sensor " + iterator->first + " doesn't respond"));
+    }
+}
+
+std::time_t SensorList::get_last_threshold_question(std::string address) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto iterator = sensors.find(address);
+    if (iterator == sensors.end())
+        throw std::invalid_argument("sensor with address" + address + "doesn't exist");
+    return iterator->second.last_threshold_question;
+}
+
 
 SensorList::SensorList(int max_answer_time) : max_answer_time(max_answer_time) {}
 

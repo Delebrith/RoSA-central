@@ -29,6 +29,7 @@ void send(std::string msg) {
     int central_in;
     int central_out;
     char str[BUFSIZ];
+    ssize_t n;
     strncpy(str, msg.c_str(), sizeof(str));
     str[sizeof(str) - 1] = 0;
 
@@ -39,9 +40,15 @@ void send(std::string msg) {
         throw std::logic_error("can't open fifo: central_out");
     }
 
-    write(central_in, str, sizeof(str));
+    n = write(central_in, str, sizeof(str));
+    if (n == 0) {
+        std::cout << "Can't write the script message." << std::endl;
+    }
     if (msg != "exit") {
-        read(central_out, str, sizeof(str));
+        n = read(central_out, str, sizeof(str));
+        if (n == 0) {
+            std::cout << "Can't read the script message." << std::endl;
+        }
         std::cout << str << std::endl;
     }
     close(central_in);
@@ -54,6 +61,7 @@ int main(int argc, const char *argv[]) {
             help(argv[0]);
         else if (std::strcmp(argv[1], "add_sensor") == 0 && argc == 4) {
             std::string msg = std::string(argv[1]) + " " + argv[2] + " " + argv[3];
+
             send(msg);
         } else if (std::strcmp(argv[1], "remove_sensor") == 0 && argc == 3) {
             std::string msg = std::string(argv[1]) + " " + argv[2];

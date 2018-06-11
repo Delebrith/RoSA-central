@@ -26,11 +26,14 @@ void ScriptExecutor::execute() {
         throw std::logic_error("can't open fifo: central_in");
     if ((central_out = open(FIFO_OUT, O_WRONLY)) < 0)
         throw std::logic_error("can't open fifo: central_out");
-
+    ssize_t n;
     common::Logger::log(std::string("Listening for scripts - ON."));
 
     while (true) {
-        read(central_in, buf, BUFSIZ);
+        n = read(central_in, buf, BUFSIZ);
+        if (n == 0) {
+            common::Logger::log(std::string("Can't read the script message."));
+        }
         if (strcmp("exit", buf) == 0) {
             common::Logger::log(std::string("Listening scripts OFF."));
             break;
@@ -40,7 +43,10 @@ void ScriptExecutor::execute() {
             return_msg = execute_command(msg);
             strncpy(buf, return_msg.c_str(), sizeof(buf));
             buf[sizeof(buf) - 1] = 0;
-            write(central_out, buf, BUFSIZ);
+            n = write(central_out, buf, BUFSIZ);
+            if (n == 0) {
+                common::Logger::log(std::string("Can't write the script result."));
+            }
         }
         memset(buf, 0, sizeof(buf));
     }

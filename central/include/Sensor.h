@@ -1,16 +1,13 @@
 //
-// Created by delebrith on 27.05.18.
+// Created by p.szwed
 //
 
 #ifndef ROSA_CENTRAL_SENSOR_H
 #define ROSA_CENTRAL_SENSOR_H
 
 #include <string>
-#include <cpprest/json.h>
 #include "SensorList.h"
 
-using namespace web;
-using namespace utility;
 
 struct Sensor {
     Sensor(std::string address, SensorList::SensorState state);
@@ -21,7 +18,7 @@ struct Sensor {
     float threshold = 0;
     std::string status;
 
-    json::value toJSON();
+    std::string toJSONString();
 };
 
 #endif //ROSA_CENTRAL_SENSOR_H

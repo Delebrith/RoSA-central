@@ -1,111 +1,198 @@
+//
+// Created by M. Swianiewicz, p. szwed, T. Nowak
+//
+
+
 #include <udp_client.h>
+#include <udp_server.h>
 #include <iostream>
 #include <cstring>
-#include "RestService.h"
+#include <fstream>
+#include "ScriptExecutor.h"
+#include "Communicator.h"
+#include "SessionList.h"
 #include "SensorList.h"
+#include "WebServer.h"
+#include "exception.h"
+#include "Logger.h"
 
-using namespace web;
-using namespace http;
-using namespace utility;
-using namespace http::experimental::listener;
+using namespace std;
 
-std::unique_ptr<RestService, std::default_delete<RestService>> rest;
-SensorList sensorlist;
+using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 
-void on_initialize(const string_t& address)
-{
-    // Build our listener's URI from the configured address and the hard-coded path "MyServer/Action"
+SessionList sessionList;
+HttpServer httpServer;
 
-    uri_builder sensorUri(address);
-    sensorUri.append_path(U(RestService::base_uri));
-
-    auto addr = sensorUri.to_uri().to_string();
-    rest = std::unique_ptr<RestService>(new RestService(addr, &sensorlist));
-    rest->open().wait();
-
-    ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
-
-    return;
-}
-
-void activate_rest_service(const utility::string_t host)
-{
-    utility::string_t port = U(":8081");
-    utility::string_t address = U(U("http://") + host);
-    address.append(port);
-    on_initialize(address);
-}
-
-void close_rest_service()
-{
-    rest->close().wait();
-    return;
-}
-
-class Callback : public common::UDPClient::Callback
-{
-public:
-    Callback(const std::string str)
-        : name(str)
-    {}
-
-    virtual void callbackOnReceive(common::Address &address, char *msg, size_t length)
-    {
-        static std::hash<const common::Address> hasher;
-        if(length < 512)
-            msg[length] = '\0';
-        std::cout << name << " - received: '" << msg << "'\nfrom: ";
-        address.print(std::cout);
-        std::cout << "(address hash: " << hasher(address) << ")\n";
-        std::cout << std::endl;
+void executeScripts(Communicator *communicator) {
+    ScriptExecutor executor(communicator);
+    try {
+        executor.execute();
     }
-
-    virtual void callbackOnError()
-    {
-        std::cout << "callbackOnError\n";
+    catch (std::logic_error &) {
+        common::Logger::log(std::string("Problem with creating pipe to listen scripts"));
     }
-
-private:
-    std::string name;
-};
-
-void test_udp_client(int argc, char **argv)
-{
-    std::cout << "\nTesting UDPClient...\n";
-    if(argc != 4)
-    {
-        std::cout << "Usage: " << argv[0] << " <host> <port1> <port2>\n";
-        return;
-    }
-    common::Address server_address1(common::AddressInfo(argv[1], argv[2], SOCK_DGRAM).getResult());
-    common::Address server_address2(common::AddressInfo(argv[1], argv[3], SOCK_DGRAM).getResult());
-    Callback callback1("callback1"), callback2("callback2"), default_callback("default callback");
-    common::UDPClient client(512, &default_callback);
-    client.getSocket().setSendTimeout(5000);
-    client.getSocket().setReceiveTimeout(5000);
-    std::cout << "UDP client started\n";
-    client.addToMessageQueue(&callback1, server_address1, "hello1", sizeof("hello1"));
-    client.addToMessageQueue(&callback2, server_address2, "hello2", sizeof("hello2"));
-    std::cout << "Sent messages\n";
-    client.receiveAndCallCallbacks();
 }
 
-int main(int argc, char **argv)
-{
-    try
-    {
-        activate_rest_service(U(argv[1]));
-        test_udp_client(argc, argv);
-        std::cout << "press enter to exit...";
-        while (std::cin.get() != '\n')
-        {
-            continue;
+void server(SensorList *sensorList, u_int16_t alarm_server_port, u_int16_t client_port) {
+
+    char buffer[512];
+    common::UDPServer server(alarm_server_port);
+    while (true) {
+        try {
+            int retval = server.receive(buffer, 511);
+            if (retval < 0) {
+                common::Logger::log(std::string("error, no data received"));
+                return;
+            }
+
+            //ending message
+            if (buffer[0] == -1 && server.getClientAddress().isLoopback(client_port)) {
+                common::Logger::log(std::string("Alarm server ended"));
+                return;
+            }
+
+            //alarm
+            std::string msg(buffer);
+            std::string address;
+            std::vector<std::string> message;
+            boost::split(message, msg, [](char c) { return c == ' '; });
+
+            address = server.getClientAddress().hostToString();
+            if (message.size() == 5 && message[0] == "alarm") {
+
+                if (message[1] == "current_value:" && message[3] == "typical_value:") {
+                    float new_current_value, new_typical_value;
+                    new_current_value = std::stof(message[2]);
+                    new_typical_value = std::stof(message[4]);
+                    sensorList->set_values(address, new_current_value, new_typical_value);
+                    common::Logger::log(std::string("ALARM!!! Received from " + address + ": " + msg));
+                } else {
+                    common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
+                                                    ". Expected: current_value: <value> typical_value: <value> "));
+                }
+
+            } else {
+                common::Logger::log(std::string("Invalid message from " + address + ": " + msg +
+                                                ". Expected: current_value: <value> typical_value: <value> "));
+            }
+
+            server.send(buffer, retval);
+            memset(buffer, 0, sizeof(buffer));
         }
-        close_rest_service();
-        exit(0);
+        catch (common::ExceptionInfo &) {
+            common::Logger::log(std::string("Problem with translating address of alarm sender"));
+        }
+        catch (std::logic_error &) {
+            common::Logger::log(std::string("Address doesn't exist"));
+        }
     }
-    catch(const std::exception &ex)
-    {
+}
+
+void polling(Communicator *communicator, SensorList *sensorList, u_int16_t polling_port, u_int16_t client_port,
+             int loop_time) {
+    common::UDPServer server(polling_port);
+    std::vector<std::string> sensors;
+    unsigned int time;
+    char buffer;
+    while (true) {
+        sensors = sensorList->get_addresses();
+        if (!sensors.empty()) {
+            time = loop_time * 1000 / sensors.size();
+
+            server.getSocket().setReceiveTimeout(time);
+            for (auto &it : sensors) {
+                communicator->ask_for_values(it);
+                if (server.receive(&buffer, 1) >= 0)
+                    if (buffer == -1 && server.getClientAddress().isLoopback(client_port)) {
+                        common::Logger::log(std::string("Polling thread ended"));
+                        return;
+                    }
+            }
+        } else {
+            time = loop_time * 1000;
+            server.getSocket().setReceiveTimeout(time);
+            if (server.receive(&buffer, 1) >= 0)
+                if (buffer == -1 && server.getClientAddress().isLoopback(client_port)) {
+                    common::Logger::log(std::string("Polling thread ended"));
+                    return;
+                }
+        }
+        sensorList->write_to_file();
+        common::Logger::log(std::string("Saving list of sensors to file"));
+    }
+
+}
+
+void init_from_file(Communicator *communicator) {
+    std::ifstream file;
+    std::string homeDir = getenv("HOME");
+
+    std::string address;
+    float threshold;
+
+    file.open(homeDir + "/.RoSA/data.txt");
+    try {
+        while (file.peek() != std::ifstream::traits_type::eof()) {
+            file >> address >> threshold;
+            communicator->add_sensor(address, threshold);
+        }
+    }
+    catch (std::logic_error &error) {
+        common::Logger::log(std::string("Adding sensors from file filed, invalid data ") + error.what());
+
+    }
+    file.close();
+}
+
+int main(int argc, char **argv) {
+    constexpr u_int16_t alarm_server_port = 7500;
+    constexpr u_int16_t client_port = 7501;
+    constexpr u_int16_t polling_port = 7503;
+    constexpr u_int16_t sensor_port1 = 7000;
+    constexpr u_int16_t sensor_port2 = 7001;
+    constexpr int max_answer_time = 5;
+    constexpr int loop_time = 40;
+
+    SensorList sensorList(max_answer_time);
+    Communicator communicator(&sensorList, client_port, std::to_string(sensor_port1), std::to_string(sensor_port2),
+                              max_answer_time);
+
+    if (argc > 1 && std::strcmp(argv[1], "init_from_file") == 0) {
+        try {
+            init_from_file(&communicator);
+        }
+        catch (std::logic_error &) {
+            common::Logger::log(std::string("Problems with opening file"));
+        }
+    }
+
+    try {
+
+        WebServer webServer(&sessionList, &communicator, &httpServer);
+        thread http_server_thread([]() {
+            // Start server
+            httpServer.start();
+        });
+
+        common::Logger::log(std::string("Http web server started..."));
+
+        thread alarm_server_thread(server, &sensorList, alarm_server_port, client_port);
+        common::Logger::log(std::string("Alarm server started..."));
+
+        thread polling_thread(polling, &communicator, &sensorList, polling_port, client_port, loop_time);
+        common::Logger::log(std::string("Polling thread started..."));
+
+        executeScripts(&communicator);
+        communicator.send_server_terminating_msg(std::to_string(alarm_server_port));
+        communicator.send_server_terminating_msg(std::to_string(polling_port));
+        httpServer.stop();
+        alarm_server_thread.join();
+        http_server_thread.join();
+        polling_thread.join();
+        sensorList.write_to_file();
+        common::Logger::log(std::string("Saving list of sensors to file"));
+    }
+    catch (const std::exception &ex) {
         std::cerr << ex.what() << "\n";
         return -1;
     }

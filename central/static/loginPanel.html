@@ -1,4 +1,5 @@
-<div id="loginPanel" ng-controller="loginController"> 
+<!--created by p.szwed-->
+<div id="loginPanel" ng-controller="loginController">
 
     <div class="row">
         <div class="col-md-6 mx-auto">
@@ -14,12 +15,12 @@
                     <form class="form" role="form" autocomplete="off" id="formLogin" method="POST">
                         <div class="form-group">
                             <label>Użytkownik</label>
-                            <input type="text" class="form-control form-control-lg rounded-0" ng-model="username">
+                            <input type="text" class="form-control form-control-lg rounded-0" ng-model="username"/>
                             <div class="invalid-feedback">Wprowadź email!</div>
                         </div>
                         <div class="form-group">
                             <label>Hasło</label>
-                            <input type="password" class="form-control form-control-lg rounded-0" ng-model="password">
+                            <input type="password" class="form-control form-control-lg rounded-0" ng-model="password"/>
                             <div class="invalid-feedback">Wprowadź hasło!</div>
                         </div>
                         <button class="btn btn-primary btn-lg float-right" id="btnLogin" ng-click = "submit()">

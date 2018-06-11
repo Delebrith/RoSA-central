@@ -1,5 +1,5 @@
 //
-// Created by delebrith on 27.05.18.
+// Created by p.szwed
 //
 
 #include "Sensor.h"
@@ -13,9 +13,6 @@ Sensor::Sensor(std::string address, SensorList::SensorState state)
 
     switch (state.status)
     {
-        case SensorList::SensorStatus::NEW:
-            this->status = "NEW";
-            break;
         case SensorList::SensorStatus::CORRECT:
             this->status = "CORRECT";
             break;
@@ -27,13 +24,24 @@ Sensor::Sensor(std::string address, SensorList::SensorState state)
     }
 }
 
-json::value Sensor::toJSON()
+
+std::string Sensor::toJSONString()
 {
-    json::value json;
-    json[U("address")] = json::value::string(address);
-    json[U("currentValue")] = json::value::number(current_value);
-    json[U("typicalValue")] = json::value::number(typical_value);
-    json[U("threshold")] = json::value::number(threshold);
-    json[U("status")] = json::value::string(status);
+    std::string json = "{\n";
+    json += "\"address\": \"";
+    json += this->address;
+    json += "\",\n";
+    json += "\"status\": \"";
+    json += this->status;
+    json += "\",\n";
+    json += "\"threshold\": ";
+    json += std::to_string(this->threshold);
+    json += ",\n";
+    json += "\"currentValue\": ";
+    json += std::to_string(this->current_value);
+    json += ",\n";
+    json += "\"typicalValue\": ";
+    json += std::to_string(this->typical_value);
+    json += "\n}";
     return json;
 }

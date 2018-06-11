@@ -1,3 +1,7 @@
+//
+// Created by T. Nowak
+//
+
 #pragma once
 #include "address.h"
 #include <cstdint>
@@ -10,6 +14,7 @@ namespace common
     public:
         UDPsocket(uint16_t port);
         int getFd() const;
+        const Address& getAddress() const;
         void setSendTimeout(unsigned milliseconds);
         void setReceiveTimeout(unsigned milliseconds);
         ~UDPsocket();
